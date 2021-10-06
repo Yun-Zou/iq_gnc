@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(iq_gnc)
+project(monash_motion)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -209,6 +209,9 @@ target_link_libraries(square ${catkin_LIBRARIES})
 
 add_executable(gnc_example src/gnc_tutorial.cpp)
 target_link_libraries(gnc_example ${catkin_LIBRARIES})
+
+add_executable(flight_modes src/flight_modes.cpp)
+target_link_libraries(flight_modes ${catkin_LIBRARIES})
 
 #add_executable(sub_sol src/subscriber_sol.cpp)
 #target_link_libraries(sub_sol ${catkin_LIBRARIES})

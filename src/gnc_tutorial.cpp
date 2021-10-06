@@ -4,11 +4,11 @@
 int main(int argc, char** argv)
 {
 	//initialize ros 
-	ros::init(argc, argv, "gnc_node");
-	ros::NodeHandle gnc_node;
+	ros::init(argc, argv, "monash_motion_node");
+	ros::NodeHandle monash_motion_node;
 	
 	//initialize control publisher/subscribers
-	init_publisher_subscriber(gnc_node);
+	init_publisher_subscriber(monash_motion_node);
 
   	// wait for FCU connection
 	wait4connect();
