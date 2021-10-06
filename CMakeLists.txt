@@ -213,6 +213,9 @@ target_link_libraries(gnc_example ${catkin_LIBRARIES})
 add_executable(flight_modes src/flight_modes.cpp)
 target_link_libraries(flight_modes ${catkin_LIBRARIES})
 
+add_executable(test src/test.cpp)
+target_link_libraries(test ${catkin_LIBRARIES})
+
 #add_executable(sub_sol src/subscriber_sol.cpp)
 #target_link_libraries(sub_sol ${catkin_LIBRARIES})
 

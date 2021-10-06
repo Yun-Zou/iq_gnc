@@ -9,20 +9,6 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "monash_motion_node");
   ros::NodeHandle monash_motion_node;
 
-  // initialize control publisher/subscribers
-  init_publisher_subscriber(monash_motion_node);
-
-  // wait for FCU connection
-  wait4connect();
-
-  // wait for used to switch to mode GUIDED
-  wait4start();
-
-  // create local reference frame
-  initialize_local_frame();
-
-  // request takeoff
-  takeoff(1);
 
   // specify some waypoints
   std::vector<gnc_api_waypoint> waypointList;
@@ -62,19 +48,16 @@ int main(int argc, char **argv) {
   // the FCU with messages. Too many messages will cause the drone to be
   // sluggish
   ros::Rate rate(2.0);
+  int counter = 0;
   while (ros::ok()) {
     ros::spinOnce();
     rate.sleep();
-    if (check_waypoint_reached(.3) == 1) {
-      waypointList.erase(waypointList.begin());
-
-      if (!waypointList.empty()) {
-        set_destination(waypointList[0].x, waypointList[0].y, waypointList[0].z, waypointList[0].psi);
+      if (counter < waypointList.size()) {
+        ROS_INFO("Waypoint %d: %f,%f,%f psi:%f", counter, waypointList[counter].x, waypointList[counter].y,waypointList[counter].z, waypointList[counter].psi);
+        counter++;
       } else {
         // land after all waypoints are reached
-        land();
       }
-    }
   }
   return 0;
 }

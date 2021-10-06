@@ -320,6 +320,8 @@ int takeoff(float takeoff_alt)
 		return -1;	
 	}
 
+	sleep(3);
+
 	//request takeoff
 	
 	mavros_msgs::CommandTOL srv_takeoff;

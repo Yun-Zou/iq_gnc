@@ -20,39 +20,39 @@ int main(int argc, char** argv)
 	initialize_local_frame();
 
 	//request takeoff
-	takeoff(3);
+	takeoff(1);
 
 	//specify some waypoints 
 	std::vector<gnc_api_waypoint> waypointList;
 	gnc_api_waypoint nextWayPoint;
 	nextWayPoint.x = 0;
 	nextWayPoint.y = 0;
-	nextWayPoint.z = 3;
+	nextWayPoint.z = 1;
 	nextWayPoint.psi = 0;
 	waypointList.push_back(nextWayPoint);
-	nextWayPoint.x = 5;
+	nextWayPoint.x = 1;
 	nextWayPoint.y = 0;
-	nextWayPoint.z = 3;
+	nextWayPoint.z = 1;
 	nextWayPoint.psi = -90;
 	waypointList.push_back(nextWayPoint);
-	nextWayPoint.x = 5;
-	nextWayPoint.y = 5;
-	nextWayPoint.z = 3;
+	nextWayPoint.x = 1;
+	nextWayPoint.y = 1;
+	nextWayPoint.z = 1;
 	nextWayPoint.psi = 0;
 	waypointList.push_back(nextWayPoint);
 	nextWayPoint.x = 0;
-	nextWayPoint.y = 5;
-	nextWayPoint.z = 3;
+	nextWayPoint.y = 1;
+	nextWayPoint.z = 1;
 	nextWayPoint.psi = 90;
 	waypointList.push_back(nextWayPoint);
 	nextWayPoint.x = 0;
 	nextWayPoint.y = 0;
-	nextWayPoint.z = 3;
+	nextWayPoint.z = 1;
 	nextWayPoint.psi = 180;
 	waypointList.push_back(nextWayPoint);
 	nextWayPoint.x = 0;
 	nextWayPoint.y = 0;
-	nextWayPoint.z = 3;
+	nextWayPoint.z = 1;
 	nextWayPoint.psi = 0;
 	waypointList.push_back(nextWayPoint);
 
