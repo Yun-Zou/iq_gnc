@@ -94,7 +94,3 @@ void follow() {
 void clearWaypoints() {
 
 }
-
-void rapid_linear_move() {
-
-}
