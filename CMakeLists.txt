@@ -213,6 +213,12 @@ target_link_libraries(gnc_example ${catkin_LIBRARIES})
 add_executable(flight_modes src/flight_modes.cpp)
 target_link_libraries(flight_modes ${catkin_LIBRARIES})
 
+add_executable(square_flight src/square_flight.cpp)
+target_link_libraries(square_flight ${catkin_LIBRARIES})
+
+add_executable(search_follow src/search_follow.cpp)
+target_link_libraries(search_follow ${catkin_LIBRARIES})
+
 add_executable(test src/test.cpp)
 target_link_libraries(test ${catkin_LIBRARIES})
 
