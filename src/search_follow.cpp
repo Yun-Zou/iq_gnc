@@ -11,6 +11,9 @@ int main(int argc, char **argv) {
   // initialize control publisher/subscribers
   init_publisher_subscriber(monash_motion_node);
 
+  // init params
+  flight_algorithm.init_params(monash_motion_node);
+
   // wait for FCU connection
   wait4connect();
 

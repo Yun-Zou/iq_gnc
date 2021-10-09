@@ -7,11 +7,34 @@ enum state { Grounded, Hover, Flight, Search, Follow, RTL };
 
 class FlightAlgorithm {
 protected:
+
+  // General Flight Parameters
   double rapid_speed;
   double normal_speed;
-  double waypoint_radius;
   double altitude;
 
+  // Waypoint Parameters
+  double max_waypoint_dist;
+  double waypoint_radius;
+
+  // Search Mode Parameters
+  double grid_length_x;
+  double grid_length_y;
+  double grid_spacing;
+  double circle_radius;
+
+  // Follow Mode Parameters
+  double follow_alt;
+  double follow_maintain_inner;
+  double follow_maintain_outer;
+  double follow_far;
+  double follow_time;
+
+  // Safe Conditions
+  double max_radius;
+  double max_altitude;
+
+  // Display Configs
   bool display_waypoints;
   bool display_path;
 
@@ -20,7 +43,38 @@ protected:
   std::vector<gnc_api_waypoint> waypointList;
 
 public:
-  void init_params();
+  void init_params(ros::NodeHandle nh) {
+
+    // General Flight Parameters
+    nh.getParam("rapid_speed", rapid_speed);
+    nh.getParam("normal_speed", normal_speed);
+    nh.getParam("altitude", altitude);
+
+    // Waypoint Parameters
+    nh.getParam("max_waypoint_dist", max_waypoint_dist);
+    nh.getParam("waypoint_radius", waypoint_radius);
+
+    // Search Mode Parameters
+    nh.getParam("grid_length_x", grid_length_x);
+    nh.getParam("grid_length_y", grid_length_y);
+    nh.getParam("grid_spacing", grid_spacing);
+    nh.getParam("circle_radius", circle_radius);
+
+    // Follow Mode Parameters
+    nh.getParam("follow_alt", follow_alt);
+    nh.getParam("follow_maintain_inner", follow_maintain_inner);
+    nh.getParam("follow_maintain_outer", follow_maintain_outer);
+    nh.getParam("follow_far", follow_far);
+    nh.getParam("follow_time", follow_time);
+
+    // Safe Conditions
+    nh.getParam("max_radius", rapid_speed);
+    nh.getParam("max_altitude", rapid_speed);
+
+    // Display Configs
+    nh.getParam("display_waypoints", normal_speed);
+    nh.getParam("display_path", rapid_speed);
+  };
 
   void set_flight_mode(state mode) { current_mission = mode; };
 
