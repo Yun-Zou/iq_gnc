@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node pkg="monash_motion" type="monash_motion_node" name="monash_ma" output="screen" respawn="false" args="slam">
+        <rosparam file="$(find mms_slam)/cfg/slam_cfg.yaml" />
+        <param name="resource_path" value="$(find mms_slam)/resources/" />
+        <param name="write_path" value="$(find mms_slam)/profiling/" />
+    </node>
+
+</launch>
+
+<launch>
+	<group>
+		<node pkg="monash_motion" type="square" name="square" output="screen" ns="/drone1">
+			<param name="namespace" value="/drone1"/>
+			<param name="use_sim_time"  value="true" />
+		</node>
+	</group>
+</launch>
