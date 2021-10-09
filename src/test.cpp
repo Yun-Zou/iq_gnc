@@ -2,6 +2,14 @@
 #include <gnc_functions.hpp>
 
 float max_waypoint_dist = 2;
+float misison;
+float alt = 5;
+
+enum state {
+  Grounded, TakeOff, Hover, Flight, Search, Follow, Landing
+};
+
+state current_state = Grounded;
 
 std::vector<gnc_api_waypoint> search_grid(geometry_msgs::Point search_origin, std::pair<double, double> size, double spacing) {
 
@@ -141,15 +149,35 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-void follow(geometry_msgs::Point pose, geometry_msgs::Point destination, float alt) {
+void follow(std::vector<gnc_api_waypoint> &waypointList, geometry_msgs::Point destination) {
+  geometry_msgs::Point current_location = get_current_location();
 
 }
 
-void set_home(geometry_msgs::Point pose, geometry_msgs::Point destination, float alt) {
+void relative_move(std::vector<gnc_api_waypoint> &waypointList, geometry_msgs::Point relative_position, float heading=0) {
   
+  geometry_msgs::Point current_location = get_current_location();
+  float current_heading = get_current_heading();
+
+  gnc_api_waypoint nextWayPoint;
+  nextWayPoint.x = current_location.x + relative_position.x;
+  nextWayPoint.y = current_location.y + relative_position.y;
+  nextWayPoint.z = current_location.z + relative_position.z;
+  nextWayPoint.psi = current_heading + heading;
+  
+  waypointList.push_back(nextWayPoint);
+
+};
+
+
+void handle_tags() {
+
+};
+
+void take_off() {
 
 }
 
-void set_home(geometry_msgs::Point pose, geometry_msgs::Point destination, float alt) {
+void check_land_signals() {
 
-}
+};
