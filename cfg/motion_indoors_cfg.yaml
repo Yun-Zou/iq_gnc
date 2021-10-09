@@ -1,0 +1,34 @@
+# Indoor Parameters
+
+# General Flight Parameters
+rapid_speed: 1.0                # Rapid Move Speed (m/s)
+normal_speed: 0.5               # Normal Move Speed (m/s)
+altitude: 2.0                   # Altitude (m)
+operation_time: 120             # How long to operate for (s)
+
+# Waypoint Parameters
+max_waypoint_dist: 1.0          # Maximum distance between waypoints (m)
+waypoint_radius: 0.3            # Radius until waypoint considered reached (m)
+
+# Search Mode Parameters
+grid_initial_x: 2               # Initial starting point of search grid (m)
+grid_initial_y: 2           
+grid_length_x: 3
+grid_length_y: 3
+grid_spacing: 1                 # Distance between each run in grid (m)
+circle_radius: 2.5              # Radius to search (m)
+
+# Follow Mode Parameters
+follow_alt: 2
+follow_maintain_inner: 1        # Inner radius from target to stay outside of (m)
+follow_maintain_outer: 2        # Outer radius from target to stay within (m)
+follow_far: 5                   # When is target considered far away (m)?
+follow_time: 30                 # Follow time before going home (s)
+
+# Safe Conditions
+max_radius: 10                  # How far is the drone allowed to go? (m)
+max_altitude: 8                 # Maximum altitude (m)
+
+# Display Configs
+display_waypoints: false
+display_path: false
