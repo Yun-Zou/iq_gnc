@@ -1,15 +1,15 @@
 # Indoor Parameters
 
 # General Flight Parameters
-rapid_speed: 1.0                # Rapid Move Speed (m/s)
-normal_speed: 0.5               # Normal Move Speed (m/s)
-altitude: 2.0                   # Altitude (m)
+rapid_speed: 2.0                # Rapid Move Speed (m/s)
+normal_speed: 1.0               # Normal Move Speed (m/s)
+altitude: 3.0                   # Altitude (m)
 circle_radius: 2                # Circle Manuveur Radius (m)
 operation_time: 120             # How long to operate for (s)
 
 # Waypoint Parameters
-max_waypoint_dist: 1.0          # Maximum distance between waypoints. Only for algorithm functions (m)
-waypoint_radius: 0.3            # Radius until waypoint considered reached (m)
+max_waypoint_dist: 2.0          # Maximum distance between waypoints. Only for algorithm functions (m)
+waypoint_radius: 0.6            # Radius until waypoint considered reached (m)
 
 # Search Mode Parameters
 grid_initial_x: 2               # Initial starting point of search grid (m)

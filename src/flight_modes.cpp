@@ -78,19 +78,3 @@ int main(int argc, char **argv) {
   }
   return 0;
 }
-
-void search_grid(geometry_msgs::Point search_origin, std::pair <double,double> size, double spacing) {
-
-}
-
-void setCircularWaypoint() {
-
-};
-
-void follow() {
-
-}
-
-void clearWaypoints() {
-
-}

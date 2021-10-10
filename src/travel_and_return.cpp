@@ -5,14 +5,12 @@ static FlightAlgorithm flight_algorithm;
 
 int main(int argc, char **argv) {
   // initialize ros
-  ros::init(argc, argv, "monash_motion_node");
-  ros::NodeHandle monash_motion_node("~");
+  ros::init(argc, argv, "travel_and_return");
+  ros::NodeHandle travel_and_return("~");
 
   // initialize control publisher/subscribers
-  init_publisher_subscriber(monash_motion_node);
-
-  // init params
-  flight_algorithm.init_params(monash_motion_node);
+  init_publisher_subscriber(travel_and_return);
+  flight_algorithm.init_params(travel_and_return);
 
   // wait for FCU connection
   wait4connect();
@@ -22,11 +20,10 @@ int main(int argc, char **argv) {
 
   // create local reference frame
   initialize_local_frame();
-
   set_speed(flight_algorithm.get_normal_speed());
 
   // request takeoff
-  takeoff(2);
+  takeoff(flight_algorithm.get_normal_altitude());
 
   flight_algorithm.set_flight_mode(Flight);
 
@@ -35,32 +32,39 @@ int main(int argc, char **argv) {
 
   absolute_move.x = 0;
   absolute_move.y = 0;
-  absolute_move.z = 2;
+  absolute_move.z = flight_algorithm.get_normal_altitude();
   absolute_move.psi = 0;
   flight_algorithm.absolute_move(absolute_move);
 
   absolute_move.x = 2;
   absolute_move.y = 0;
-  absolute_move.z = 2;
+  absolute_move.z = flight_algorithm.get_normal_altitude();
   absolute_move.psi = -90;
   flight_algorithm.absolute_move(absolute_move);
 
   absolute_move.x = 2;
-  absolute_move.y = 2;
-  absolute_move.z = 2;
+  absolute_move.y = 5;
+  absolute_move.z = flight_algorithm.get_normal_altitude();
   absolute_move.psi = 0;
   flight_algorithm.absolute_move(absolute_move);
 
-  gnc_api_waypoint search_origin;
-  search_origin.x = 3;
-  search_origin.y = 3;
-  search_origin.z = 2;
-  search_origin.psi = 0;
+  absolute_move.x = -3;
+  absolute_move.y = 5;
+  absolute_move.z = flight_algorithm.get_normal_altitude();
+  absolute_move.psi = 90;
+  flight_algorithm.absolute_move(absolute_move);
 
-  std::pair<double,double> size = {4,4};
-  double spacing = 2.0;
+  geometry_msgs::Point centre;
+  centre.x = absolute_move.x;
+  centre.y = absolute_move.y;
+  centre.z = absolute_move.z;
+  flight_algorithm.setCircularWaypoint(centre, 2, 1);
 
-  flight_algorithm.search_grid(search_origin, size, spacing);
+  absolute_move.x = 0;
+  absolute_move.y = 0;
+  absolute_move.z = flight_algorithm.get_normal_altitude();
+  absolute_move.psi = 180;
+  flight_algorithm.absolute_move(absolute_move);
 
   std::vector<gnc_api_waypoint> waypointList = flight_algorithm.getWayponts();
 
@@ -72,13 +76,16 @@ int main(int argc, char **argv) {
   while (ros::ok()) {
     ros::spinOnce();
     rate.sleep();
-    if (check_waypoint_reached(.3) == 1) {
+    if (check_waypoint_reached(flight_algorithm.get_waypoint_radius()) == 1) {
       if (counter < waypointList.size()) {
         set_destination(waypointList[counter].x, waypointList[counter].y,
                         waypointList[counter].z, waypointList[counter].psi);
         counter++;
       } else {
         // land after all waypoints are reached
+        flight_algorithm.set_flight_mode(RTL);
+        set_destination(0, 0, flight_algorithm.get_normal_altitude(), 0);
+
         land();
         flight_algorithm.set_flight_mode(Grounded);
       }

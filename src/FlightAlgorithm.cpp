@@ -1,3 +1,4 @@
+#include "geometry_msgs/Point.h"
 #include <ros/ros.h>
 #include <utility>
 
@@ -12,6 +13,8 @@ protected:
   double rapid_speed;
   double normal_speed;
   double altitude;
+  double circle_radius;
+  double operation_time;
 
   // Waypoint Parameters
   double max_waypoint_dist;
@@ -21,7 +24,8 @@ protected:
   double grid_length_x;
   double grid_length_y;
   double grid_spacing;
-  double circle_radius;
+  double search_circle_radius;
+  double search_lost_time;
 
   // Follow Mode Parameters
   double follow_alt;
@@ -48,9 +52,11 @@ public:
     // General Flight Parameters
     nh.getParam("rapid_speed", rapid_speed);
     nh.getParam("normal_speed", normal_speed);
+    nh.getParam("circle_radius", circle_radius);
     nh.getParam("altitude", altitude);
+    nh.getParam("operation_time", operation_time);
 
-    // Waypoint Parameters
+        // Waypoint Parameters
     nh.getParam("max_waypoint_dist", max_waypoint_dist);
     nh.getParam("waypoint_radius", waypoint_radius);
 
@@ -58,7 +64,8 @@ public:
     nh.getParam("grid_length_x", grid_length_x);
     nh.getParam("grid_length_y", grid_length_y);
     nh.getParam("grid_spacing", grid_spacing);
-    nh.getParam("circle_radius", circle_radius);
+    nh.getParam("search_circle_radius", search_circle_radius);
+    nh.getParam("search_lost_time", search_lost_time);
 
     // Follow Mode Parameters
     nh.getParam("follow_alt", follow_alt);
@@ -85,6 +92,17 @@ public:
     geometry_msgs::Point current_location = get_current_location();
   };
 
+  void absolute_move(gnc_api_waypoint absolute_position) {
+
+    gnc_api_waypoint nextWayPoint;
+    nextWayPoint.x = absolute_position.x;
+    nextWayPoint.y = absolute_position.y;
+    nextWayPoint.z = absolute_position.z;
+    nextWayPoint.psi = absolute_position.psi;
+
+    waypointList.push_back(nextWayPoint);
+  };
+
   void relative_move(gnc_api_waypoint relative_position) {
 
     geometry_msgs::Point current_location = get_current_location();
@@ -95,17 +113,6 @@ public:
     nextWayPoint.y = current_location.y + relative_position.y;
     nextWayPoint.z = current_location.z + relative_position.z;
     nextWayPoint.psi = current_heading + relative_position.psi;
-
-    waypointList.push_back(nextWayPoint);
-  };
-
-  void absolute_move(gnc_api_waypoint absolute_position) {
-
-    gnc_api_waypoint nextWayPoint;
-    nextWayPoint.x = absolute_position.x;
-    nextWayPoint.y = absolute_position.y;
-    nextWayPoint.z = absolute_position.z;
-    nextWayPoint.psi = absolute_position.psi;
 
     waypointList.push_back(nextWayPoint);
   };
@@ -156,9 +163,7 @@ public:
                                                     float rotation = 2 * M_PI) {
     float min_arc = 1;
     float min_angle = min_arc / radius;
-    ROS_INFO("min_angle %f", min_angle);
 
-    std::vector<gnc_api_waypoint> waypointList;
     gnc_api_waypoint nextWayPoint;
 
     float current_rotation = start;
@@ -182,6 +187,33 @@ public:
   std::vector<gnc_api_waypoint> getWayponts() { return waypointList; };
 
   void clearWaypoints() { waypointList.clear(); };
+
+  double get_rapid_speed() {
+    return rapid_speed;
+  }
+
+  double get_normal_speed() {
+    return normal_speed;
+  }
+
+  double get_normal_altitude() {
+    return altitude;
+  }
+
+  double get_waypoint_radius() {
+    return waypoint_radius;
+  }
+
+  double calc_waypoint_dist(gnc_api_waypoint waypoint) {
+    geometry_msgs::Point current_position = get_current_location();
+
+    float deltaX = abs(waypoint.x - current_position.x);
+    float deltaY = abs(waypoint.y - current_position.y);
+
+    float dMag = sqrt( pow(deltaX, 2) + pow(deltaY, 2));
+
+    return dMag;
+  }
 
   void follow();
 
