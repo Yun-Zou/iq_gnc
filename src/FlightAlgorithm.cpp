@@ -1,4 +1,5 @@
 #include "geometry_msgs/Point.h"
+#include "ros/duration.h"
 #include <ros/ros.h>
 #include <utility>
 
@@ -42,6 +43,13 @@ protected:
   bool display_waypoints;
   bool display_path;
 
+  ros::Subscriber target_sub;
+  nav_msgs::Odometry target_pose;
+  ros::Time target_last_seen;
+  bool target_valid = false;
+
+  ros::Time begin;
+
   state current_mission = Grounded;
 
   std::vector<gnc_api_waypoint> waypointList;
@@ -75,12 +83,12 @@ public:
     nh.getParam("follow_time", follow_time);
 
     // Safe Conditions
-    nh.getParam("max_radius", rapid_speed);
-    nh.getParam("max_altitude", rapid_speed);
+    nh.getParam("max_radius", max_radius);
+    nh.getParam("max_altitude", max_altitude);
 
     // Display Configs
-    nh.getParam("display_waypoints", normal_speed);
-    nh.getParam("display_path", rapid_speed);
+    nh.getParam("display_waypoints", display_waypoints);
+    nh.getParam("display_path", display_path);
   };
 
   void set_flight_mode(state mode) { current_mission = mode; };
@@ -137,30 +145,29 @@ public:
 
     while (nextWayPoint.y < bounding_box.y) {
       while (nextWayPoint.x < bounding_box.x) {
-        nextWayPoint.x =
-            nextWayPoint.x + std::min(2.0, bounding_box.x - nextWayPoint.x);
+        nextWayPoint.x = nextWayPoint.x + std::min(2.0, bounding_box.x - nextWayPoint.x);
+        nextWayPoint.psi = -90;
         waypointList.push_back(nextWayPoint);
       }
 
-      nextWayPoint.y =
-          nextWayPoint.y + std::min(spacing, bounding_box.y - nextWayPoint.y);
+      nextWayPoint.y = nextWayPoint.y + std::min(spacing, bounding_box.y - nextWayPoint.y);
+      nextWayPoint.psi = 0;
       waypointList.push_back(nextWayPoint);
 
       while (nextWayPoint.x > search_origin.x) {
         nextWayPoint.x = nextWayPoint.x - std::min(float (2.0), nextWayPoint.x - search_origin.x);
+        nextWayPoint.psi = 90;
         waypointList.push_back(nextWayPoint);
       }
 
-      nextWayPoint.y =
-          nextWayPoint.y + std::min(spacing, bounding_box.y - nextWayPoint.y);
+      nextWayPoint.y = nextWayPoint.y + std::min(spacing, bounding_box.y - nextWayPoint.y);
+      nextWayPoint.psi = 0;
       waypointList.push_back(nextWayPoint);
     }
   }
 
-  std::vector<gnc_api_waypoint> setCircularWaypoint(geometry_msgs::Point centre,
-                                                    float radius, float alt,
-                                                    float start = M_PI,
-                                                    float rotation = 2 * M_PI) {
+  std::vector<gnc_api_waypoint> setCircularWaypoint(geometry_msgs::Point centre, float radius, float alt,
+                                                    float start = M_PI, float rotation = 2 * M_PI) {
     float min_arc = 1;
     float min_angle = min_arc / radius;
 
@@ -215,21 +222,90 @@ public:
     return dMag;
   }
 
-  void follow();
+  void startTimer() {
+    begin = ros::Time::now();
+  };
+
+  void check_target_validity() {
+    ros::Duration time_diff = ros::Time::now() - target_last_seen;
+    target_valid = !(time_diff > ros::Duration(search_lost_time));
+
+    return;
+  }
+
+  void follow_target() {
+    geometry_msgs::Point current_position = get_current_location();
+    // geometry_msgs::Pose target = target_pose.pose.pose.position;
+
+    // set_flight_mode(Follow);
+    
+    // double heading;
+    // double psi;
+
+    // if (dist > high) {
+    //   // fly fast towards target
+    // } else if (outside radius or inside radius) {
+    //   // fly normal towards middle of inner ring
+    // } else if (inside radius) {
+    //   // point towards target
+    // }
+
+    return;
+  }
+
+  void go_home() {
+
+    geometry_msgs::Point current_position = get_current_location();
+
+    float deltaX = 0 - current_position.x;
+    float deltaY = 0 - current_position.y;
+    float psi = atan2(deltaY, deltaX) - M_PI/2;
+    psi = fmod(psi + 180,360);
+
+    if (psi < 0) {psi += 360;};
+    psi -= -180;
+
+    set_flight_mode(RTL);
+    set_destination(0, 0, altitude, psi);
+
+  }
 
   void flight_path();
 
-  void goHome();
-
   void avoid();
 
-  void stop();
+  void target_cb(const nav_msgs::Odometry &msg){
+    target_last_seen = ros::Time::now();
+    target_pose = msg;
+  };
 
-  void subscribe();
+  void init_publisher_subscriber(ros::NodeHandle nh) {
 
-  void publish();
+    std::string ros_namespace;
+    if (!nh.hasParam("namespace")) {
+      ROS_INFO("using default namespace");
+    } else {
+      nh.getParam("namespace", ros_namespace);
+      ROS_INFO("using namespace %s", ros_namespace.c_str());
+    }
+
+    // target_sub = nh.subscribe<nav_msgs::Odometry>((ros_namespace + "/monash_perception/target").c_str(), 5, target_cb);
+  };
 
   void logging();
 
-  void check_safety();
+  void check_safety_conditions() {
+
+    geometry_msgs::Point current_position = get_current_location();
+
+    bool time_check = (ros::Time::now() - begin) > ros::Duration(operation_time);
+    bool radius_check = pow(pow(current_position.x,2) + pow(current_position.y,2),1/2) > max_radius;
+    bool altitude_check = current_position.z > max_altitude;
+
+    if (time_check || radius_check || altitude_check) {
+      set_flight_mode(RTL);
+    }
+
+    return;
+  };
 };

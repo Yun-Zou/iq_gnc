@@ -20,11 +20,12 @@ int main(int argc, char **argv) {
 
   // create local reference frame
   initialize_local_frame();
-  set_speed(flight_algorithm.get_normal_speed());
 
+  
   // request takeoff
   takeoff(flight_algorithm.get_normal_altitude());
 
+  set_speed(flight_algorithm.get_normal_speed());
   flight_algorithm.set_flight_mode(Flight);
 
   // specify some waypoints
