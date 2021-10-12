@@ -204,26 +204,23 @@ include_directories(
 # Solutions 
 
 
-add_executable(square src/square.cpp)
+add_executable(square src/iq_gnc/square.cpp)
 target_link_libraries(square ${catkin_LIBRARIES})
 
-add_executable(gnc_example src/gnc_tutorial.cpp)
+add_executable(gnc_example src/iq_gnc/gnc_tutorial.cpp)
 target_link_libraries(gnc_example ${catkin_LIBRARIES})
 
-add_executable(flight_modes src/flight_modes.cpp)
-target_link_libraries(flight_modes ${catkin_LIBRARIES})
-
-add_executable(square_flight src/square_flight.cpp)
+add_executable(square_flight src/flight_plans/square_flight.cpp)
 target_link_libraries(square_flight ${catkin_LIBRARIES})
 
-add_executable(search_follow src/search_follow.cpp)
+add_executable(search_follow src/flight_plans/search_follow.cpp)
 target_link_libraries(search_follow ${catkin_LIBRARIES})
 
-add_executable(travel_and_return src/travel_and_return.cpp)
+add_executable(travel_and_return src/flight_plans/travel_and_return.cpp)
 target_link_libraries(travel_and_return ${catkin_LIBRARIES})
 
-add_executable(test src/test.cpp)
-target_link_libraries(test ${catkin_LIBRARIES})
+add_executable(testing_function src/flight_plans/testing_function.cpp)
+target_link_libraries(testing_function ${catkin_LIBRARIES})
 
 #add_executable(sub_sol src/subscriber_sol.cpp)
 #target_link_libraries(sub_sol ${catkin_LIBRARIES})

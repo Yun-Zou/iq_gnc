@@ -30,6 +30,8 @@ class FlightController {
       double waypoint_radius;
 
       // Search Mode Parameters
+      double grid_initial_x;
+      double grid_initial_y;
       double grid_length_x;
       double grid_length_y;
       double grid_spacing;
@@ -107,6 +109,14 @@ class FlightController {
           } else if (mode == Flight) {
 
           } else if (mode == Search) {
+              grid_params params = {grid_length_x, grid_length_y, grid_spacing, max_waypoint_dist};
+              gnc_api_waypoint search_origin;
+              search_origin.x = grid_initial_x;
+              search_origin.y = grid_initial_y;
+              search_origin.z = altitude;
+              search_origin.psi = 0;
+              
+              flight_algorithm.set_search_grid(waypointList, search_origin, params);
 
           } else if (mode == Follow) {
 
@@ -250,6 +260,8 @@ class FlightController {
           nh.getParam("waypoint_radius", waypoint_radius);
 
           // Search Mode Parameters
+          nh.getParam("grid_initial_x", grid_initial_x);
+          nh.getParam("grid_initial_y", grid_initial_y);
           nh.getParam("grid_length_x", grid_length_x);
           nh.getParam("grid_length_y", grid_length_y);
           nh.getParam("grid_spacing", grid_spacing);
