@@ -1,7 +1,7 @@
-#include "FlightAlgorithm.cpp"
+#include "FlightController.cpp"
 // include API
 
-static FlightAlgorithm flight_algorithm;
+static FlightController flight_controller;
 
 int main(int argc, char **argv) {
   // initialize ros
@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
   init_publisher_subscriber(monash_motion_node);
 
   // init params
-  flight_algorithm.init_params(monash_motion_node);
+  flight_controller.init_params();
 
   // wait for FCU connection
   wait4connect();
@@ -23,46 +23,21 @@ int main(int argc, char **argv) {
   // create local reference frame
   initialize_local_frame();
 
-  set_speed(flight_algorithm.get_normal_speed());
+  set_speed(flight_controller.get_normal_speed());
 
   // request takeoff
   takeoff(2);
 
-  flight_algorithm.set_flight_mode(Flight);
+  flight_controller.set_flight_mode(Flight);
 
   // specify some waypoints
   gnc_api_waypoint absolute_move;
 
-  absolute_move.x = 0;
-  absolute_move.y = 0;
-  absolute_move.z = 2;
-  absolute_move.psi = 0;
-  flight_algorithm.absolute_move(absolute_move);
+  flight_controller.absolute_move_WP(0,0,2,0);
+  flight_controller.absolute_move_WP(2,0,2,-90);
+  flight_controller.absolute_move_WP(2,2,2,0);
 
-  absolute_move.x = 2;
-  absolute_move.y = 0;
-  absolute_move.z = 2;
-  absolute_move.psi = -90;
-  flight_algorithm.absolute_move(absolute_move);
-
-  absolute_move.x = 2;
-  absolute_move.y = 2;
-  absolute_move.z = 2;
-  absolute_move.psi = 0;
-  flight_algorithm.absolute_move(absolute_move);
-
-  gnc_api_waypoint search_origin;
-  search_origin.x = 3;
-  search_origin.y = 3;
-  search_origin.z = 2;
-  search_origin.psi = 0;
-
-  std::pair<double,double> size = {4,4};
-  double spacing = 2.0;
-
-  flight_algorithm.search_grid(search_origin, size, spacing);
-
-  std::vector<gnc_api_waypoint> waypointList = flight_algorithm.getWayponts();
+  std::vector<gnc_api_waypoint> waypointList = flight_controller.get_waypoints();
 
   // specify control loop rate. We recommend a low frequency to not over load
   // the FCU with messages. Too many messages will cause the drone to be
@@ -80,7 +55,7 @@ int main(int argc, char **argv) {
       } else {
         // land after all waypoints are reached
         land();
-        flight_algorithm.set_flight_mode(Grounded);
+        flight_controller.set_flight_mode(Grounded);
       }
     }
   }

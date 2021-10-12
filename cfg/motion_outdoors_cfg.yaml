@@ -30,7 +30,3 @@ follow_time: 30                 # Follow time before going home (s)
 # Safe Conditions
 max_radius: 10                  # How far is the drone allowed to go? (m)
 max_altitude: 8                 # Maximum altitude (m)
-
-# Display Configs
-display_waypoints: false
-display_path: false

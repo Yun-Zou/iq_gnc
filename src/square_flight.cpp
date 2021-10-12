@@ -1,7 +1,7 @@
-#include "FlightAlgorithm.cpp"
+#include "FlightController.cpp"
 // include API
 
-static FlightAlgorithm flight_algorithm;
+static FlightController flight_controller;
 
 int main(int argc, char **argv) {
   // initialize ros
@@ -10,6 +10,7 @@ int main(int argc, char **argv) {
 
   // initialize control publisher/subscribers
   init_publisher_subscriber(monash_motion_node);
+  flight_controller.init();
 
   // wait for FCU connection
   wait4connect();
@@ -20,74 +21,55 @@ int main(int argc, char **argv) {
   // create local reference frame
   initialize_local_frame();
   
-  set_speed(0.5);
+  set_speed(flight_controller.get_normal_speed());
 
   // request takeoff
-  takeoff(2);
+  takeoff(flight_controller.get_normal_altitude());
 
-  flight_algorithm.set_flight_mode(Flight);
+  flight_controller.set_flight_mode(Flight);
 
   // specify some waypoints
-  gnc_api_waypoint absolute_move;
+  flight_controller.absolute_move_WP(0,0,2,0);
+  flight_controller.absolute_move_WP(2,0,2,-90);
+  flight_controller.absolute_move_WP(2,2,2,0);
+  flight_controller.absolute_move_WP(0,2,2,90);
+  flight_controller.absolute_move_WP(0,0,2,180);
+  flight_controller.absolute_move_WP(0,0,2,0);
 
-  absolute_move.x = 0;
-  absolute_move.y = 0;
-  absolute_move.z = 2;
-  absolute_move.psi = 0;
-  flight_algorithm.absolute_move(absolute_move);
-
-  absolute_move.x = 2;
-  absolute_move.y = 0;
-  absolute_move.z = 2;
-  absolute_move.psi = -90;
-  flight_algorithm.absolute_move(absolute_move);
-
-  absolute_move.x = 2;
-  absolute_move.y = 2;
-  absolute_move.z = 2;
-  absolute_move.psi = 0;
-  flight_algorithm.absolute_move(absolute_move);
-
-  absolute_move.x = 0;
-  absolute_move.y = 2;
-  absolute_move.z = 2;
-  absolute_move.psi = 90;
-  flight_algorithm.absolute_move(absolute_move);
-
-  absolute_move.x = 0;
-  absolute_move.y = 0;
-  absolute_move.z = 2;
-  absolute_move.psi = 180;
-  flight_algorithm.absolute_move(absolute_move);
-
-  absolute_move.x = 0;
-  absolute_move.y = 0;
-  absolute_move.z = 2;
-  absolute_move.psi = 0;
-  flight_algorithm.absolute_move(absolute_move);
-
-  std::vector<gnc_api_waypoint> waypointList = flight_algorithm.getWayponts();
+  std::vector<gnc_api_waypoint> waypointList = flight_controller.get_waypoints();
+  state current_mode = flight_controller.get_flight_mode();
 
   // specify control loop rate. We recommend a low frequency to not over load
   // the FCU with messages. Too many messages will cause the drone to be
   // sluggish
   ros::Rate rate(2.0);
-  int counter = 0;
+  int counter = flight_controller.waypoint_counter;
+
   while (ros::ok()) {
     ros::spinOnce();
     rate.sleep();
-    if (check_waypoint_reached(.3) == 1) {
-      if (counter < waypointList.size()) {
-        set_destination(waypointList[counter].x, waypointList[counter].y,
-                        waypointList[counter].z, waypointList[counter].psi);
-        counter++;
-      } else {
-        // land after all waypoints are reached
-        flight_algorithm.set_flight_mode(RTL);
-        set_destination(0,0,0,0);
-        
+
+    waypointList = flight_controller.get_waypoints();
+    current_mode = flight_controller.get_flight_mode();
+
+    if (check_waypoint_reached(flight_controller.get_waypoint_radius()) == 1) {
+      
+      if (current_mode == Land) {
         land();
-        flight_algorithm.set_flight_mode(Grounded);
+      }
+
+      else if (current_mode == RTL) {
+        flight_controller.set_flight_mode(Land);
+      }
+
+      else if (counter < waypointList.size()) {
+        set_destination(waypointList[counter].x, waypointList[counter].y, waypointList[counter].z, waypointList[counter].psi);
+        counter++;
+      }
+
+      else {
+        // return home after all waypoints are reached
+        flight_controller.set_flight_mode(RTL);
       }
     }
   }

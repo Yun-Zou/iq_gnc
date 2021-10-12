@@ -159,7 +159,10 @@ void set_destination(float x, float y, float z, float psi)
 	x = Xlocal + correction_vector_g.position.x + local_offset_pose_g.x;
 	y = Ylocal + correction_vector_g.position.y + local_offset_pose_g.y;
 	z = Zlocal + correction_vector_g.position.z + local_offset_pose_g.z;
-	ROS_INFO("Destination set to x: %f y: %f z: %f origin frame", x, y, z);
+        ROS_INFO("correction vector %f, %f, %f", correction_vector_g.position.x,
+                 correction_vector_g.position.y,
+                 correction_vector_g.position.z);
+        ROS_INFO("Destination set to x: %f y: %f z: %f origin frame", x, y, z);
 
 	waypoint_g.pose.position.x = x;
 	waypoint_g.pose.position.y = y;
