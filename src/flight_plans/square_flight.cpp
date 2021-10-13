@@ -24,17 +24,18 @@ int main(int argc, char **argv) {
   set_speed(flight_controller.get_normal_speed());
 
   // request takeoff
-  takeoff(flight_controller.get_normal_altitude());
+  // takeoff(flight_controller.get_normal_altitude());
+  takeoff(1.0);
 
   flight_controller.set_flight_mode(Flight);
 
   // specify some waypoints
-  flight_controller.absolute_move_WP(0,0,2,0);
-  flight_controller.absolute_move_WP(2,0,2,-90);
-  flight_controller.absolute_move_WP(2,2,2,0);
-  flight_controller.absolute_move_WP(0,2,2,90);
-  flight_controller.absolute_move_WP(0,0,2,180);
-  flight_controller.absolute_move_WP(0,0,2,0);
+  // flight_controller.absolute_move_WP(0,0,2,0);
+  flight_controller.absolute_move_WP(1,0,1,-90);
+  flight_controller.absolute_move_WP(1,1,1,0);
+  flight_controller.absolute_move_WP(0,1,1,90);
+  flight_controller.absolute_move_WP(0,0,1,180);
+  flight_controller.absolute_move_WP(0,0,1,0);
 
   std::vector<gnc_api_waypoint> waypointList = flight_controller.get_waypoints();
   state current_mode = flight_controller.get_flight_mode();

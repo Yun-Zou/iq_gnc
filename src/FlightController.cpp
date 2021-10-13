@@ -72,7 +72,15 @@ class FlightController {
         int waypoint_counter = 0;
 
         bool command_request(mavros_msgs::CommandInt::Request &req, mavros_msgs::CommandInt::Response &res) {
-            
+            if (accepting_commands) {
+              
+
+            } else {
+              res.success = false;
+              return false;
+            }
+
+            return true;
         }
 
         bool request_apriltag_detection(bool request) {
@@ -295,7 +303,7 @@ class FlightController {
           waypoint_pub = nh.advertise<geometry_msgs::PoseArray>((ros_namespace + "/monash_motion/waypoints").c_str(), 1);
         //   target_sub = nh.subscribe<geometry_msgs::PoseStamped>((ros_namespace + "/monash_perception/target").c_str(), 5, &FlightController::target_callback);
 
-        //   command_server = nh.advertiseService("/monash_motion/request_command", &FlightController::command_request);
+          command_server = nh.advertiseService("/monash_motion/request_command", &FlightController::command_request, this);
           apriltag_client = nh.serviceClient<mavros_msgs::CommandBool>((ros_namespace + "/monash_perception/detection_request"));
 
         };

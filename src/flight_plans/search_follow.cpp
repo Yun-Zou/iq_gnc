@@ -55,8 +55,7 @@ int main(int argc, char **argv) {
       }
 
       else if (counter < waypointList.size()) {
-        set_destination(waypointList[counter].x, waypointList[counter].y,
-                        waypointList[counter].z, waypointList[counter].psi);
+        set_destination(waypointList[counter].x, waypointList[counter].y, waypointList[counter].z, waypointList[counter].psi);
         counter++;
       }
 
