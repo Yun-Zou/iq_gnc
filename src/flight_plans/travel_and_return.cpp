@@ -5,12 +5,12 @@ static FlightController flight_controller;
 
 int main(int argc, char **argv) {
   // initialize ros
-  ros::init(argc, argv, "monash_motion_node");
-  ros::NodeHandle monash_motion_node("~");
+  ros::init(argc, argv, "travel_and_return");
+  ros::NodeHandle travel_and_return("~");
 
   // initialize control publisher/subscribers
-  init_publisher_subscriber(monash_motion_node);
-  flight_controller.init();
+  init_publisher_subscriber(travel_and_return);
+  flight_controller.init(travel_and_return);
 
   // wait for FCU connection
   wait4connect();
@@ -25,9 +25,7 @@ int main(int argc, char **argv) {
 
   // request takeoff
   double alt = flight_controller.get_normal_altitude();
-  takeoff(alt);
-
-  flight_controller.set_flight_mode(Flight);
+  flight_controller.set_flight_mode(TakeOff);
 
   // specify some waypoints
   flight_controller.absolute_move_WP(0, 0, alt, 0);
@@ -38,13 +36,14 @@ int main(int argc, char **argv) {
   flight_controller.absolute_move_WP(0, 0, alt, 180);
 
   std::vector<gnc_api_waypoint> waypointList = flight_controller.get_waypoints();
+  
+  flight_controller.set_flight_mode(Flight);
   state current_mode = flight_controller.get_flight_mode();
 
   // specify control loop rate. We recommend a low frequency to not over load
   // the FCU with messages. Too many messages will cause the drone to be
   // sluggish
   ros::Rate rate(2.0);
-  int counter = flight_controller.waypoint_counter;
 
   while (ros::ok()) {
     ros::spinOnce();
@@ -55,20 +54,24 @@ int main(int argc, char **argv) {
 
     if (check_waypoint_reached(flight_controller.get_waypoint_radius()) == 1) {
 
-      if (current_mode == Land) {
-        land();
-      }
+      int counter = flight_controller.counter;
 
-      else if (current_mode == RTL) {
+      // Land if UAV has reached home position
+      if (current_mode == RTL || current_mode == Land) {
         flight_controller.set_flight_mode(Land);
+
       }
 
+      // Go to each waypoint
       else if (counter < waypointList.size()) {
         set_destination(waypointList[counter].x, waypointList[counter].y,
                         waypointList[counter].z, waypointList[counter].psi);
-        counter++;
+
+        flight_controller.counter++;
+
       }
 
+      // Go home if no remaining commands
       else {
         // return home after all waypoints are reached
         flight_controller.set_flight_mode(RTL);
