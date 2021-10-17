@@ -111,8 +111,8 @@ public:
     nextWayPoint.psi = 0;
     waypointList.push_back(nextWayPoint);
 
-    while (current_rotation < (params.radius + params.start_point)) {
-      current_rotation = ceil((current_rotation + std::min(min_angle, params.rotation + params.start_point - current_rotation)) * 100) / 100;
+    while (current_rotation < (params.rotation + params.start_point)) {
+      current_rotation = ceil((current_rotation + std::min(min_angle, params.rotation + params.start_point - current_rotation)) * 1000) / 1000;
       nextWayPoint.x = centre.x + cos(current_rotation) * params.radius;
       nextWayPoint.y = centre.y + sin(current_rotation) * params.radius;
       waypointList.push_back(nextWayPoint);
@@ -121,7 +121,7 @@ public:
     return waypointList;
   };
 
-  bool set_follow(geometry_msgs::PoseStamped &target_pose, follow_params params) {
+  bool set_follow(std::vector<gnc_api_waypoint> &waypointList, geometry_msgs::PoseStamped &target_pose, follow_params params) {
 
     geometry_msgs::Point current_position = get_current_location();
     gnc_api_waypoint nextWaypoint;
@@ -170,20 +170,28 @@ public:
       nextWaypoint.y = current_position.y;
     }
 
+    waypointList.push_back(nextWaypoint);
+
     return true;
   }
 
   void set_avoid();
 
-  void return_home(float altitude) {
+  void return_home(std::vector<gnc_api_waypoint> &waypointList, float altitude) {
 
     geometry_msgs::Point current_position = get_current_location();
+    gnc_api_waypoint point;
 
     float deltaX = 0 - current_position.x;
     float deltaY = 0 - current_position.y;
-    float psi = atan2(deltaY, deltaX) - M_PI/2;
+    float psi = atan2(deltaY, deltaX) - M_PI / 2;
     psi = wrap_angle(psi);
 
-    set_destination(0, 0, altitude, psi);
+    point.x = 0.0;
+    point.y = 0.0;
+    point.z = altitude;
+    point.psi = psi;
+    waypointList.push_back(point);
+    
   }
 };

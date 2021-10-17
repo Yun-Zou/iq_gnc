@@ -4,17 +4,18 @@
 
 #include "mavros_msgs/CommandInt.h"
 #include "mavros_msgs/CommandBool.h"
-
-#include "geometry_msgs/Point.h"
 #include "geometry_msgs/PoseStamped.h"
-#include "geometry_msgs/PoseArray.h"
+#include "visualization_msgs/Marker.h"
+#include "visualization_msgs/MarkerArray.h"
+#include "nav_msgs/Path.h"
+#include "std_msgs/String.h"
 
-#include "ros/duration.h"
-#include "ros/node_handle.h"
+#include <string>
 #include <utility>
 
 
 enum state { Grounded, Hover, Flight, Search, Follow, RTL, Land, TakeOff };
+std::vector<std::string> state_string = {"Grounded","Hover","Flight","Search","Follow","RTL","Land","TakeOff"};
 
 class FlightController {
     protected:
@@ -51,10 +52,11 @@ class FlightController {
 
       ros::Subscriber target_sub;
       ros::Publisher waypoint_pub;
+      ros::Publisher flight_mode_pub;
       ros::ServiceServer command_server;
       ros::ServiceClient apriltag_client;
 
-      geometry_msgs::Pose target_pose;
+      geometry_msgs::PoseStamped target_pose;
       ros::Time target_last_seen;
 
       ros::Time begin_time;
@@ -69,11 +71,16 @@ class FlightController {
 
     public:
 
-        int waypoint_counter = 0;
+        int counter = 0;
 
         bool command_request(mavros_msgs::CommandInt::Request &req, mavros_msgs::CommandInt::Response &res) {
             if (accepting_commands) {
-              
+              if ((state) req.command == Flight) {
+                relative_move_WP(req.param1, req.param2, req.param3, req.param4);
+              }
+
+              set_flight_mode((state) req.command);
+              res.success = true;
 
             } else {
               res.success = false;
@@ -102,21 +109,26 @@ class FlightController {
             }
         }
 
-        bool target_callback(const geometry_msgs::PoseStamped &msg) {
-          target_last_seen = ros::Time::now();
-          target_pose = msg.pose;
-        };
+        // bool target_callback(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+        //   target_last_seen = ros::Time::now();
+        //   target_pose = msg.pose;
+        // };
 
         bool set_flight_mode(state mode) {
           current_mission = mode;
 
           if (mode == Grounded) {
+            clear_waypoints(counter);
+            arm(false);
 
           } else if (mode == Hover) {
+            set_mode("Brake");
 
           } else if (mode == Flight) {
+            set_mode("Guided");
 
           } else if (mode == Search) {
+              clear_waypoints(counter);
               grid_params params = {grid_length_x, grid_length_y, grid_spacing, max_waypoint_dist};
               gnc_api_waypoint search_origin;
               search_origin.x = grid_initial_x;
@@ -129,19 +141,43 @@ class FlightController {
           } else if (mode == Follow) {
 
             if (check_target_validity()) {
-            //   flight_algorithm.set_follow();
+              clear_waypoints(counter);
+              follow_params params = {altitude,follow_maintain_inner, follow_maintain_outer, follow_far, follow_time, max_waypoint_dist,rapid_speed,normal_speed};
+              
+              flight_algorithm.set_follow(waypointList, target_pose , params);
             } else {
-              // set_flight_mode()
+              set_flight_mode(Flight);
             }
 
           } else if (mode == RTL) {
-            // flight_algorithm.return_home(2.0);
+            clear_waypoints(counter );
+            flight_algorithm.return_home(waypointList,altitude);
+            counter++;
 
           } else if (mode == Land) {
+            clear_waypoints(counter);
+            gnc_api_waypoint origin;
+            origin.x = 0.0;
+            origin.y = 0.0;
+            origin.z = 0.0;
+            origin.psi = 0.0;
+            counter++;
+            waypointList.push_back(origin);
+            land();
 
           } else if (mode == TakeOff) {
+            clear_waypoints(counter);
+            gnc_api_waypoint origin;
+            origin.x = 0.0;
+            origin.y = 0.0;
+            origin.z = 0.0;
+            origin.psi = 0.0;
+            counter++;
+            waypointList.push_back(origin);
+            takeoff(altitude);
 
           } else {
+            ROS_INFO("Request didn't match a mode");
           }
         };
 
@@ -154,7 +190,8 @@ class FlightController {
 
         void clear_waypoints(int counter = 0) {
 
-        //   waypointList.erase(counter, waypointList.size()); 
+          waypointList.erase(std::next(waypointList.begin(), counter),
+                             std::next(waypointList.begin(), waypointList.size()));
         };
 
         void absolute_move(gnc_api_waypoint &absolute_position) {
@@ -242,19 +279,71 @@ class FlightController {
         };
 
         void publish_waypoints(){
-            geometry_msgs::PoseArray waypoint_array;
-            // waypoint_array.header.frame_id;
-            // waypoint_pub.publish(waypoint_array);
+
+            visualization_msgs::Marker marker;
+            geometry_msgs::Point point;
+
+            // Set the frame ID and timestamp.  See the TF tutorials for information on
+            // these.
+            marker.header.frame_id = "/camera_odom_frame";
+            marker.header.stamp = ros::Time::now();
+            marker.ns = "waypoints";
+            marker.id = 0;
+            marker.type = visualization_msgs::Marker::SPHERE_LIST;
+            marker.action = visualization_msgs::Marker::ADD;
+
+            // Set the pose of the marker.  This is a full 6DOF pose relative to the
+            // frame/time specified in the header
+            marker.pose.position.x = 0;
+            marker.pose.position.y = 0;
+            marker.pose.position.z = 0;
+            marker.pose.orientation.x = 0.0;
+            marker.pose.orientation.y = 0.0;
+            marker.pose.orientation.z = 0.0;
+            marker.pose.orientation.w = 1.0;
+
+            for (int i = 0; i < counter; i++) {
+              point.x = waypointList[i].x;
+              point.y = waypointList[i].y;
+              point.z = waypointList[i].z;
+
+              marker.points.push_back(point);
+            }
+
+            // Set the scale of the marker -- 1x1x1 here means 1m on a side
+            marker.scale.x = waypoint_radius;
+            marker.scale.y = waypoint_radius;
+            marker.scale.z = waypoint_radius;
+
+            // Set the color -- be sure to set alpha to something non-zero!
+            marker.color.r = 1.0f;
+            marker.color.g = 0.4f;
+            marker.color.b = 0.0f;
+            marker.color.a = 0.5f;
+
+            marker.lifetime = ros::Duration(2);
+
+            waypoint_pub.publish(marker);
         };
 
-        void init() {
-            this->init_params();
-            this->init_publisher_subscriber();
+        void publish_flight_mode() {
+          state mode = get_flight_mode();
+          std_msgs::String msg;
+          msg.data = state_string[mode];
+          flight_mode_pub.publish(msg);
+        };
+
+        void publish_topics() {
+          publish_waypoints();
+          publish_flight_mode();
         }
 
-        void init_params() {
+        void init(ros::NodeHandle nh) {
+            this->init_params(nh);
+            this->init_publisher_subscriber(nh);
+        }
 
-          ros::NodeHandle nh("~");
+        void init_params(ros::NodeHandle nh) {
 
           // General Flight Parameters
           nh.getParam("rapid_speed", rapid_speed);
@@ -288,9 +377,7 @@ class FlightController {
           nh.getParam("max_altitude", max_altitude);
         }
 
-        void init_publisher_subscriber() {
-
-          ros::NodeHandle nh("~");
+        void init_publisher_subscriber(ros::NodeHandle nh) {
 
           std::string ros_namespace;
           if (!nh.hasParam("namespace")) {
@@ -300,10 +387,11 @@ class FlightController {
             ROS_INFO("using namespace %s", ros_namespace.c_str());
           }
           
-          waypoint_pub = nh.advertise<geometry_msgs::PoseArray>((ros_namespace + "/monash_motion/waypoints").c_str(), 1);
-        //   target_sub = nh.subscribe<geometry_msgs::PoseStamped>((ros_namespace + "/monash_perception/target").c_str(), 5, &FlightController::target_callback);
+          waypoint_pub    = nh.advertise<visualization_msgs::Marker>((ros_namespace + "/monash_motion/waypoints").c_str(), 1);
+          flight_mode_pub = nh.advertise<std_msgs::String>(ros_namespace + "/monash_motion/flight_mode", 1);
+          // target_sub      = nh.subscribe<geometry_msgs::PoseStamped>((ros_namespace + "/monash_perception/target").c_str(), 5, &FlightController::target_callback,);
 
-          command_server = nh.advertiseService("/monash_motion/request_command", &FlightController::command_request, this);
+          command_server  = nh.advertiseService("/monash_motion/request_command", &FlightController::command_request, this);
           apriltag_client = nh.serviceClient<mavros_msgs::CommandBool>((ros_namespace + "/monash_perception/detection_request"));
 
         };
