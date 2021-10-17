@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   mavros_msgs
   rospy
   sensor_msgs
+  visualization_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -221,6 +222,9 @@ target_link_libraries(travel_and_return ${catkin_LIBRARIES})
 
 add_executable(testing_function src/flight_plans/testing_function.cpp)
 target_link_libraries(testing_function ${catkin_LIBRARIES})
+
+add_executable(partner src/flight_plans/partner.cpp)
+target_link_libraries(partner ${catkin_LIBRARIES})
 
 #add_executable(sub_sol src/subscriber_sol.cpp)
 #target_link_libraries(sub_sol ${catkin_LIBRARIES})
