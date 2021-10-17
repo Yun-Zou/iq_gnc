@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node pkg="monash_motion" type="partner" name="partner" respawn="false" output="screen">
+        <rosparam file="$(find monash_motion)/cfg/motion_indoors_cfg.yaml" />
+    </node>
+
+</launch>
