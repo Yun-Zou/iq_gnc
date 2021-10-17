@@ -258,7 +258,7 @@ int initialize_local_frame()
 	return 0;
 }
 
-int arm()
+int arm(bool state = true)
 {
 	//intitialize first waypoint of mission
 	set_destination(0,0,0,0);
@@ -271,19 +271,21 @@ int arm()
 	// arming
 	ROS_INFO("Arming drone");
 	mavros_msgs::CommandBool arm_request;
-	arm_request.request.value = true;
+	arm_request.request.value = state;
 	while (!current_state_g.armed && !arm_request.response.success && ros::ok())
 	{
 		ros::Duration(.1).sleep();
 		arming_client.call(arm_request);
 		local_pos_pub.publish(waypoint_g);
 	}
-	if(arm_request.response.success)
+	if(state && arm_request.response.success)
 	{
 		ROS_INFO("Arming Successful");	
 		return 0;
-	}else{
-		ROS_INFO("Arming failed with %d", arm_request.response.success);
+	} else if (!state && arm_request.response.success) {
+		ROS_INFO("Disarming Successful");
+	} else{
+		ROS_INFO("Arming/Disarming failed with %d", arm_request.response.success);
 		return -1;	
 	}
 }
@@ -455,7 +457,7 @@ int init_publisher_subscriber(ros::NodeHandle controlnode)
 		ROS_INFO("using namespace %s", ros_namespace.c_str());
 	}
 	local_pos_pub = controlnode.advertise<geometry_msgs::PoseStamped>((ros_namespace + "/mavros/setpoint_position/local").c_str(), 10);
-	currentPos = controlnode.subscribe<nav_msgs::Odometry>((ros_namespace + "/mavros/local_position/local").c_str(), 10, pose_cb);
+	currentPos = controlnode.subscribe<nav_msgs::Odometry>((ros_namespace + "/mavros/global_position/local").c_str(), 10, pose_cb);
 	state_sub = controlnode.subscribe<mavros_msgs::State>((ros_namespace + "/mavros/state").c_str(), 10, state_cb);
 	arming_client = controlnode.serviceClient<mavros_msgs::CommandBool>((ros_namespace + "/mavros/cmd/arming").c_str());
 	land_client = controlnode.serviceClient<mavros_msgs::CommandTOL>((ros_namespace + "/mavros/cmd/land").c_str());
