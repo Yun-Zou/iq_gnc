@@ -7,6 +7,8 @@
 
 #include <gnc_functions.hpp>
 
+enum facing_direction {Forward, Inside, Outside};
+
 struct grid_params {
   double length_x;
   double length_y;
@@ -19,6 +21,7 @@ struct circle_params {
   double altitude;
   double start_point;
   double rotation;
+  facing_direction direction;
 };
 
 struct follow_params {
@@ -49,14 +52,37 @@ public:
   }
 
   float wrap_angle(float angle) {
-    angle = fmod(angle + 180, 360);
-
-    if (angle < 0) {
-      angle += 360;
-    };
-    angle -= -180;
-    return angle;
+    return -180 + fmod(360 + fmod(angle - 180,360),360);
   }
+
+  float angle2heading(float angle) {
+    float heading = angle - 90;
+
+    return wrap_angle(heading);
+  }
+
+  float rad2deg(float radians) {
+    return radians * 180 / M_PI;
+  }
+
+  float deg2rad(float degrees) {
+    return degrees * M_PI / 180;
+  }
+
+  geometry_msgs::Point waypoint2point(gnc_api_waypoint &waypoint) {
+    geometry_msgs::Point point;
+    point.x = waypoint.x;
+    point.y = waypoint.y;
+    point.z = waypoint.z;
+    return point;
+  }
+
+  float get_direct_heading(geometry_msgs::Point point1, geometry_msgs::Point point2) {
+    float deltaX = point2.x - point1.x;
+    float deltaY = point2.y - point1.y;
+    float psi = atan2(deltaY, deltaX);
+    return angle2heading(rad2deg(psi));
+  };
 
   void set_search_grid(std::vector<gnc_api_waypoint> &waypointList, gnc_api_waypoint &search_origin, grid_params params) {
 
@@ -105,16 +131,29 @@ public:
 
     double current_rotation = params.start_point;
 
+
     nextWayPoint.x = centre.x + cos(params.start_point) * params.radius;
     nextWayPoint.y = centre.y + sin(params.start_point) * params.radius;
     nextWayPoint.z = centre.z + params.altitude;
-    nextWayPoint.psi = 0;
+    nextWayPoint.psi = get_direct_heading(centre, waypoint2point(nextWayPoint));
     waypointList.push_back(nextWayPoint);
-
     while (current_rotation < (params.rotation + params.start_point)) {
+      gnc_api_waypoint oldWaypoint = nextWayPoint;
       current_rotation = ceil((current_rotation + std::min(min_angle, params.rotation + params.start_point - current_rotation)) * 1000) / 1000;
       nextWayPoint.x = centre.x + cos(current_rotation) * params.radius;
       nextWayPoint.y = centre.y + sin(current_rotation) * params.radius;
+
+      float psi;
+      if (params.direction == Forward) {
+        psi = get_direct_heading(waypoint2point(oldWaypoint), waypoint2point(nextWayPoint) );
+      } else if (params.direction == Outside) {
+        psi = -get_direct_heading(waypoint2point(nextWayPoint), centre);
+      } else if (params.direction == Inside) {
+        psi = get_direct_heading(waypoint2point(nextWayPoint),centre);
+      }
+
+      nextWayPoint.psi = psi;
+      
       waypointList.push_back(nextWayPoint);
     }
 
@@ -137,10 +176,7 @@ public:
     float q3 = target_pose.pose.orientation.z;
     target_waypoint.psi = atan2((2 * (q0 * q3 + q1 * q2)), (1 - 2 * (pow(q2, 2) + pow(q3, 2))));
 
-    float deltaX = target_pose.pose.position.x - current_position.x;
-    float deltaY = target_pose.pose.position.y - current_position.y;
-    float psi = atan2(deltaY, deltaX) - M_PI / 2;
-    psi = wrap_angle(psi);
+    float psi = get_direct_heading(current_position, waypoint2point(target_waypoint));
 
     double dist = calc_waypoint_dist(target_waypoint);
 
@@ -182,10 +218,7 @@ public:
     geometry_msgs::Point current_position = get_current_location();
     gnc_api_waypoint point;
 
-    float deltaX = 0 - current_position.x;
-    float deltaY = 0 - current_position.y;
-    float psi = atan2(deltaY, deltaX) - M_PI / 2;
-    psi = wrap_angle(psi);
+    float psi = get_direct_heading(current_position, waypoint2point(point));
 
     point.x = 0.0;
     point.y = 0.0;

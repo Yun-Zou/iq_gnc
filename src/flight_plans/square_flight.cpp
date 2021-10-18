@@ -1,16 +1,17 @@
 #include "../FlightController.cpp"
 // include API
 
-static FlightController flight_controller;
+
 
 int main(int argc, char **argv) {
   // initialize ros
   ros::init(argc, argv, "square_flight");
   ros::NodeHandle square_flight("~");
 
+  FlightController flight_controller(square_flight);
+  
   // initialize control publisher/subscribers
   init_publisher_subscriber(square_flight);
-  flight_controller.init(square_flight);
 
   // wait for FCU connection
   wait4connect();
@@ -22,7 +23,7 @@ int main(int argc, char **argv) {
   initialize_local_frame();
   
   set_speed(flight_controller.get_normal_speed());
-  double alt = flight_controller.get_normal_altitude();
+
   // request takeoff
   flight_controller.set_flight_mode(TakeOff);
 

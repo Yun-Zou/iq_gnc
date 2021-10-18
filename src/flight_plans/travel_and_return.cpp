@@ -1,16 +1,17 @@
 #include "../FlightController.cpp"
 // include API
 
-static FlightController flight_controller;
+
 
 int main(int argc, char **argv) {
   // initialize ros
   ros::init(argc, argv, "travel_and_return");
   ros::NodeHandle travel_and_return("~");
 
+  FlightController flight_controller(travel_and_return);
+
   // initialize control publisher/subscribers
   init_publisher_subscriber(travel_and_return);
-  flight_controller.init(travel_and_return);
 
   // wait for FCU connection
   wait4connect();

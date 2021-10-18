@@ -1,16 +1,30 @@
 #include "../FlightController.cpp"
 // include API
 
-static FlightController flight_controller;
+void init_fake_initial_pos() {
+  current_pose_g.pose.pose.position.x = 0;
+  current_pose_g.pose.pose.position.y = 0;
+  current_pose_g.pose.pose.position.z = 0;
+  current_pose_g.pose.pose.orientation.x = 0;
+  current_pose_g.pose.pose.orientation.y = 0;
+  current_pose_g.pose.pose.orientation.z = 0;
+  current_pose_g.pose.pose.orientation.w = 1;
+}
 
 int main(int argc, char **argv) {
   // initialize ros
   ros::init(argc, argv, "testing_function");
   ros::NodeHandle testing_function("~");
 
+  FlightController flight_controller(testing_function);
+
   // initialize control publisher/subscribers
-  flight_controller.init(testing_function);
   double alt = flight_controller.get_normal_altitude();
+
+  init_fake_initial_pos();
+
+  flight_controller.set_accepting_commands(true);
+
   // specify some waypoints
   flight_controller.absolute_move_WP(0, 0, alt, 0);
   flight_controller.absolute_move_WP(2, 0, alt, -90);
@@ -29,7 +43,7 @@ int main(int argc, char **argv) {
 
     ros::spinOnce();
     rate.sleep();
-
+    
     waypointList = flight_controller.get_waypoints();
     current_mode = flight_controller.get_flight_mode();
 
@@ -38,7 +52,6 @@ int main(int argc, char **argv) {
     // Land if UAV has reached home position
     if (current_mode == RTL || current_mode == Land) {
       flight_controller.set_flight_mode(Land);
-
     } 
 
     // Go to each waypoint

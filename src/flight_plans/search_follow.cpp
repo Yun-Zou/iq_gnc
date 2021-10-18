@@ -1,16 +1,15 @@
 #include "../FlightController.cpp"
 // include API
 
-static FlightController flight_controller;
-
 int main(int argc, char **argv) {
   // initialize ros
-  ros::init(argc, argv, "monash_motion_node");
-  ros::NodeHandle monash_motion_node("~");
+  ros::init(argc, argv, "search_follow");
+  ros::NodeHandle search_follow("~");
+
+  FlightController flight_controller(search_follow);
 
   // initialize control publisher/subscribers
-  init_publisher_subscriber(monash_motion_node);
-  flight_controller.init();
+  init_publisher_subscriber(search_follow);
 
   // wait for FCU connection
   wait4connect();
@@ -24,7 +23,10 @@ int main(int argc, char **argv) {
   set_speed(flight_controller.get_normal_speed());
 
   // request takeoff
-  takeoff(flight_controller.get_normal_altitude());
+  flight_controller.set_flight_mode(TakeOff);
+
+  // specify some waypoints
+  // flight_controller.absolute_move_WP(0,0,2,0);
 
   flight_controller.set_flight_mode(Search);
 
@@ -35,7 +37,9 @@ int main(int argc, char **argv) {
   // the FCU with messages. Too many messages will cause the drone to be
   // sluggish
   ros::Rate rate(2.0);
-  int counter = flight_controller.waypoint_counter;
+  int counter = flight_controller.counter;
+
+  bool follow_searching = false;
 
   while (ros::ok()) {
     ros::spinOnce();
@@ -44,26 +48,49 @@ int main(int argc, char **argv) {
     waypointList = flight_controller.get_waypoints();
     current_mode = flight_controller.get_flight_mode();
 
+    if (current_mode == Search && flight_controller.check_target_validity()) {
+      flight_controller.set_flight_mode(Follow);
+    }
+
     if (check_waypoint_reached(flight_controller.get_waypoint_radius()) == 1) {
 
-      if (current_mode == Land) {
-        land();
+      int counter = flight_controller.counter;
+
+      if (current_mode == Follow) {
+        
+        if (flight_controller.check_target_validity()) {
+          flight_controller.follow_target();
+          follow_searching = false;
+        } else if (!follow_searching)  {
+          flight_controller.search_last_known(Inside);
+          flight_controller.search_last_known(Outside);
+          follow_searching = true;
+        }
       }
 
-      else if (current_mode == RTL) {
+      // Land if UAV has reached home position
+      if (current_mode == RTL || current_mode == Land) {
         flight_controller.set_flight_mode(Land);
+
       }
 
+      // Go to each waypoint
       else if (counter < waypointList.size()) {
-        set_destination(waypointList[counter].x, waypointList[counter].y, waypointList[counter].z, waypointList[counter].psi);
-        counter++;
-      }
+        set_destination(waypointList[counter].x, waypointList[counter].y,
+                        waypointList[counter].z, waypointList[counter].psi);
 
+        flight_controller.counter++;
+
+      } 
+      
+      // Go home if no remaining commands
       else {
         // return home after all waypoints are reached
         flight_controller.set_flight_mode(RTL);
       }
     }
+
+    flight_controller.publish_waypoints();
   }
   return 0;
 }
