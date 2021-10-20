@@ -15,8 +15,8 @@
 #include <string>
 #include <utility>
 
-enum state { Grounded, Hover, Flight, Search, Follow, RTL, Land, TakeOff };
-std::vector<std::string> state_string = {"Grounded", "Hover", "Flight", "Search", "Follow", "RTL", "Land", "TakeOff"};
+enum state { Grounded, Hover, Flight, Circle, Search, Follow, RTL, Land, TakeOff };
+std::vector<std::string> state_string = {"Grounded", "Hover", "Flight", "Circle", "Search", "Follow", "RTL", "Land", "TakeOff"};
 
 class FlightController {
 protected:
@@ -105,7 +105,7 @@ public:
 
   void absolute_move_WP(float x, float y, float z, float psi);
 
-  void circular_WP(float x, float y, float z);
+  void circular_WP(float x, float y, float z, float radius, facing_direction direction);
 
   void follow_target();
 

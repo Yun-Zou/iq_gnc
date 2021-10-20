@@ -5,6 +5,8 @@ bool FlightController::command_request(monash_main::RequestAction::Request &req,
   if (accepting_commands) {
     if (req.command == (int) Flight) {
       relative_move_WP(req.param1, req.param2, req.param3, req.param4);
+    } else if (req.command == (int) Circle) {
+      circular_WP(req.param1, req.param2, altitude, req.param3, (facing_direction) req.param4);
     }
     state commandRequested = (state) req.command;
     set_flight_mode(commandRequested);
@@ -68,12 +70,23 @@ bool FlightController::set_flight_mode(state mode) {
     arm(false);
 
   } else if (mode == Hover) {
+    clear_waypoints(counter);
     set_mode("Brake");
     request_apriltag_detection(false);
 
   } else if (mode == Flight) {
     set_mode("Guided");
     request_apriltag_detection(false);
+
+  } else if (mode == Circle) {
+    set_mode("Guided");
+    clear_waypoints(counter);
+    request_apriltag_detection(false);
+    geometry_msgs::Point current_location = get_current_location();
+    circle_params params = {circle_radius, altitude,0,2*M_PI,Forward};
+
+    flight_algorithm.set_circular_waypoint(waypointList, current_location, params);
+
 
   } else if (mode == Search) {
     request_apriltag_detection(true);
@@ -186,13 +199,13 @@ void FlightController::absolute_move_WP(float x, float y, float z, float psi) {
   absolute_move(absolute_position);
 };
 
-void FlightController::circular_WP(float x, float y, float z) {
+void FlightController::circular_WP(float x, float y, float z, float radius, facing_direction direction = Forward) {
   geometry_msgs::Point centre;
   centre.x = x;
   centre.y = y;
   centre.z = z;
 
-  circle_params params = {circle_radius, altitude, 0.0, 2 * M_PI, Forward};
+  circle_params params = {circle_radius, altitude, 0.0, 2 * M_PI, direction};
 
   flight_algorithm.set_circular_waypoint(waypointList, centre, params);
 };

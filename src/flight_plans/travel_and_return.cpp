@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
   flight_controller.absolute_move_WP(2, 0, alt, -90);
   flight_controller.absolute_move_WP(2, 5, alt, 0);
   flight_controller.absolute_move_WP(-3, 5, alt, 90);
-  flight_controller.circular_WP(-3,5,alt);
+  flight_controller.circular_WP(-3,5,alt, 2);
   flight_controller.absolute_move_WP(0, 0, alt, 180);
 
   std::vector<gnc_api_waypoint> waypointList = flight_controller.get_waypoints();
