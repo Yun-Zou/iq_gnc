@@ -10,6 +10,7 @@ project(monash_motion)
 find_package(catkin REQUIRED COMPONENTS
   mavros
   std_msgs
+  tf
   geometry_msgs
   mavros_msgs
   rospy
