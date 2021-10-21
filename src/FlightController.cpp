@@ -1,4 +1,5 @@
 #include "FlightController.hpp"
+#include "geometry_msgs/Quaternion.h"
 
 bool FlightController::command_request(monash_main::RequestAction::Request &req,
                      monash_main::RequestAction::Response &res) {
@@ -115,6 +116,7 @@ bool FlightController::set_flight_mode(state mode) {
   } else if (mode == RTL) {
     request_apriltag_detection(false);
     clear_waypoints(counter);
+    counter++;
     flight_algorithm.return_home(waypointList, altitude);
 
   } else if (mode == Land) {
@@ -125,8 +127,8 @@ bool FlightController::set_flight_mode(state mode) {
     origin.y = 0.0;
     origin.z = 0.0;
     origin.psi = 0.0;
-    counter++;
     waypointList.push_back(origin);
+    counter++;
     land();
 
   } else if (mode == TakeOff) {
@@ -137,8 +139,8 @@ bool FlightController::set_flight_mode(state mode) {
     origin.y = 0.0;
     origin.z = 0.0;
     origin.psi = 0.0;
-    counter++;
     waypointList.push_back(origin);
+    counter++;
     takeoff(altitude);
 
   } else {
@@ -301,6 +303,61 @@ void FlightController::publish_waypoints() {
   waypoint_pub.publish(marker);
 };
 
+void FlightController::broadcast_local_frame() {
+  transform_local.setOrigin(tf::Vector3(local_offset_pose_g.x, local_offset_pose_g.y, local_offset_pose_g.z));
+  transform_camera_odom.setOrigin(tf::Vector3(0,0,0));
+  
+  tf::Quaternion q;
+  q.setRPY(0, 0, local_offset_g);
+  transform_local.setRotation(q);
+
+  transform_camera_odom.setRotation(tf::Quaternion(0, 0, 0, 1));
+
+  tf_br_local.sendTransform(tf::StampedTransform(transform_local, ros::Time::now(), "map","drone_local_frame"));
+  tf_br_camera.sendTransform(tf::StampedTransform(transform_camera_odom, ros::Time::now(), "drone_local_frame","camera_odom_frame"));
+}
+
+void FlightController::publish_pose() {
+  visualization_msgs::Marker marker;
+  geometry_msgs::Point point;
+  geometry_msgs::Quaternion quat_msg;
+
+  // Set the frame ID and timestamp.  See the TF tutorials for information on
+  // these.
+  marker.header.frame_id = "/drone_local_frame";
+  marker.header.stamp = ros::Time::now();
+  marker.ns = "pose";
+  marker.id = 0;
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.action = visualization_msgs::Marker::ADD;
+
+  // Set the pose of the marker.  This is a full 6DOF pose relative to the
+  // frame/time specified in the header
+  marker.pose.position = current_pos_local;
+
+  tf::Quaternion quat_tf;
+  quat_tf.setRPY(0, 0, current_heading_g);
+  
+  quaternionTFToMsg(quat_tf, quat_msg);
+  marker.pose.orientation = quat_msg;
+
+  // Set the scale of the marker -- 1x1x1 here means 1m on a side
+  marker.scale.x = 0.4;
+  marker.scale.y = 0.4;
+  marker.scale.z = 0.3;
+
+  // Set the color -- be sure to set alpha to something non-zero!
+  marker.color.r = 1.0f;
+  marker.color.g = 0.0f;
+  marker.color.b = 0.0f;
+  marker.color.a = 1.0f;
+
+  marker.lifetime = ros::Duration(2);
+
+  waypoint_pub.publish(marker);
+
+};
+
 void FlightController::publish_flight_mode() {
   state mode = get_flight_mode();
   std_msgs::String msg;
@@ -310,7 +367,9 @@ void FlightController::publish_flight_mode() {
 
 void FlightController::publish_topics() {
   publish_waypoints();
+  publish_pose();
   publish_flight_mode();
+  broadcast_local_frame();
 }
 
 void FlightController::init(ros::NodeHandle nh) {
@@ -362,10 +421,11 @@ void FlightController::init_publisher_subscriber(ros::NodeHandle nh) {
     ROS_INFO("using namespace %s", ros_namespace.c_str());
   }
 
-  waypoint_pub = nh.advertise<visualization_msgs::Marker>((ros_namespace + "/monash_motion/waypoints").c_str(), 1);
-  flight_mode_pub = nh.advertise<std_msgs::String>(ros_namespace + "/monash_motion/flight_mode", 1);
-  target_sub = nh.subscribe<geometry_msgs::PoseStamped>((ros_namespace + "/monash_perception/target").c_str(), 5, &FlightController::target_callback, this);
+  waypoint_pub        = nh.advertise<visualization_msgs::Marker>((ros_namespace + "/monash_motion/waypoints").c_str(), 1);
+  flight_mode_pub     = nh.advertise<std_msgs::String>(ros_namespace + "/monash_motion/flight_mode", 1);
+  drone_pose_pub      = nh.advertise<nav_msgs::Path>((ros_namespace + "/monash_motion/pose_path").c_str(), 1);
+  target_sub          = nh.subscribe<geometry_msgs::PoseStamped>((ros_namespace + "/monash_perception/target").c_str(), 5, &FlightController::target_callback, this);
 
-  command_server  = nh.advertiseService((ros_namespace + "/monash_motion/request_command").c_str(), &FlightController::command_request, this);
-  apriltag_client = nh.serviceClient<mavros_msgs::CommandBool>((ros_namespace + "/monash_perception/detection_request"));
+  command_server      = nh.advertiseService((ros_namespace + "/monash_motion/request_command").c_str(), &FlightController::command_request, this);
+  apriltag_client     = nh.serviceClient<mavros_msgs::CommandBool>((ros_namespace + "/monash_perception/detection_request"));
 };

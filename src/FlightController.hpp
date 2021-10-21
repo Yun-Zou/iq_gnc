@@ -14,6 +14,8 @@
 
 #include <string>
 #include <utility>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_datatypes.h>
 
 enum state { Grounded, Hover, Flight, Circle, Search, Follow, RTL, Land, TakeOff };
 std::vector<std::string> state_string = {"Grounded", "Hover", "Flight", "Circle", "Search", "Follow", "RTL", "Land", "TakeOff"};
@@ -55,6 +57,7 @@ protected:
   ros::Subscriber target_sub;
   ros::Publisher waypoint_pub;
   ros::Publisher flight_mode_pub;
+  ros::Publisher drone_pose_pub;
   ros::ServiceServer command_server;
   ros::ServiceClient apriltag_client;
 
@@ -69,6 +72,11 @@ protected:
   bool requesting_apriltags = false;
 
   std::vector<gnc_api_waypoint> waypointList;
+
+  tf::TransformBroadcaster tf_br_local;
+  tf::TransformBroadcaster tf_br_camera;
+  tf::Transform transform_local;
+  tf::Transform transform_camera_odom;
 
   /** @brief FlightAlgorithm instance */
   FlightAlgorithm flight_algorithm;
@@ -125,6 +133,10 @@ public:
 
   void check_safety_conditions();
   void publish_waypoints();
+
+  void broadcast_local_frame();
+
+  void publish_pose();
 
   void publish_flight_mode();
 
