@@ -27,6 +27,7 @@ This module is designed to make high level control programming more simple.
 
 mavros_msgs::State current_state_g;
 nav_msgs::Odometry current_pose_g;
+geometry_msgs::Point current_pos_local;
 geometry_msgs::Pose correction_vector_g;
 geometry_msgs::Point local_offset_pose_g;
 geometry_msgs::PoseStamped waypoint_g;
@@ -96,7 +97,6 @@ void pose_cb(const nav_msgs::Odometry::ConstPtr& msg)
 }
 geometry_msgs::Point get_current_location()
 {
-	geometry_msgs::Point current_pos_local;
 	current_pos_local = enu_2_local(current_pose_g);
 	return current_pos_local;
 
