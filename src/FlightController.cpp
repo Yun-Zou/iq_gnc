@@ -4,7 +4,7 @@ bool FlightController::command_request(monash_main::RequestAction::Request &req,
                      monash_main::RequestAction::Response &res) {
   if (accepting_commands) {
     if (req.command == (int) Flight) {
-      relative_move_WP(req.param1, req.param2, req.param3, req.param4);
+      absolute_move_WP(req.param1, req.param2, req.param3, req.param4);
     } else if (req.command == (int) Circle) {
       circular_WP(req.param1, req.param2, altitude, req.param3, (facing_direction) req.param4);
     }
@@ -44,7 +44,6 @@ bool FlightController::request_apriltag_detection(bool request) {
 void FlightController::target_callback( const geometry_msgs::PoseStamped::ConstPtr &msg) {
   target_pose = *msg;
   target_valid = true;
-  ROS_INFO("%f %f %f", target_pose.pose.position.x,target_pose.pose.position.y,target_pose.pose.position.z);
 };
 
 void FlightController::search_last_known(facing_direction direction) {
@@ -117,7 +116,6 @@ bool FlightController::set_flight_mode(state mode) {
     request_apriltag_detection(false);
     clear_waypoints(counter);
     flight_algorithm.return_home(waypointList, altitude);
-    counter++;
 
   } else if (mode == Land) {
     request_apriltag_detection(false);
@@ -250,7 +248,6 @@ void FlightController::check_safety_conditions() {
       pow(pow(current_position.x, 2) + pow(current_position.y, 2), 1 / 2) >
       max_radius;
   bool altitude_check = current_position.z > max_altitude;
-  ROS_INFO("%d %d %d", time_check, radius_check, altitude_check);
   if (time_check || radius_check || altitude_check) {
     set_flight_mode(RTL);
   }
@@ -263,7 +260,7 @@ void FlightController::publish_waypoints() {
 
   // Set the frame ID and timestamp.  See the TF tutorials for information on
   // these.
-  marker.header.frame_id = "/camera_odom_frame";
+  marker.header.frame_id = "/drone_local_frame";
   marker.header.stamp = ros::Time::now();
   marker.ns = "waypoints";
   marker.id = 0;

@@ -78,6 +78,8 @@ int main(int argc, char **argv) {
         flight_controller.set_flight_mode(RTL);
       }
     }
+
+    flight_controller.publish_topics();
   }
   return 0;
 }

@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
       }
     }
 
-    flight_controller.publish_waypoints();
+    flight_controller.publish_topics();
   }
   return 0;
 }
