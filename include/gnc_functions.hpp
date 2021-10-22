@@ -347,7 +347,7 @@ This function returns an int of 1 or 0. THis function can be used to check when 
 @return 1 - waypoint reached 
 @return 0 - waypoint not reached
 */
-int check_waypoint_reached(float pos_tolerance=0.3, float heading_tolerance=0.01)
+int check_waypoint_reached(float pos_tolerance=0.3, float heading_tolerance=0.1)
 {
 	local_pos_pub.publish(waypoint_g);
 	
