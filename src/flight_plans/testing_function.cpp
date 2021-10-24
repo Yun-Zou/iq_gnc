@@ -30,11 +30,13 @@ int main(int argc, char **argv) {
   flight_controller.absolute_move_WP(2, 0, alt, -90);
   flight_controller.absolute_move_WP(2, 5, alt, 0);
   flight_controller.absolute_move_WP(-3, 5, alt, 90);
-  flight_controller.set_flight_mode(Search);
+  // flight_controller.set_flight_mode(Search);
 
   std::vector<gnc_api_waypoint> waypointList = flight_controller.get_waypoints();
   state current_mode = flight_controller.get_flight_mode();
   
+    // flight_controller.set_flight_mode(Follow);
+
   // specify control loop rate. We recommend a low frequency to not over load
   // the FCU with messages. Too many messages will cause the drone to be
   // sluggish
@@ -48,6 +50,7 @@ int main(int argc, char **argv) {
     current_mode = flight_controller.get_flight_mode();
 
     int counter = flight_controller.counter;
+    flight_controller.follow_target();
 
     // Land if UAV has reached home position
     if (current_mode == RTL || current_mode == Land) {
