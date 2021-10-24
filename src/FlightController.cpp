@@ -103,15 +103,15 @@ bool FlightController::set_flight_mode(state mode) {
 
   } else if (mode == Follow) {
     request_apriltag_detection(true);
+    follow_target();
+    // if (check_target_validity()) {
+    //   follow_target();
 
-    if (check_target_validity()) {
-      follow_target();
-
-    } else {
-      set_flight_mode(Flight);
-      ROS_INFO("Can't set flight mode Follow. Setting flight mode to Flight");
-      return false;
-    }
+    // } else {
+    //   set_flight_mode(Flight);
+    //   ROS_INFO("Can't set flight mode Follow. Setting flight mode to Flight");
+    //   return false;
+    // }
 
   } else if (mode == RTL) {
     request_apriltag_detection(false);
@@ -234,9 +234,10 @@ bool FlightController::check_target_validity() {
 
   if (time_diff <= ros::Duration(search_lost_time)) {
     target_valid = false;
-    return false;
-  } else {
+    ROS_INFO("target valid");
     return true;
+  } else {
+    return false;
   }
 }
 
@@ -319,7 +320,8 @@ void FlightController::broadcast_local_frame() {
 
 void FlightController::publish_pose() {
   visualization_msgs::Marker marker;
-  geometry_msgs::Point point;
+  geometry_msgs::Point point = get_current_location();
+  float heading = (get_current_heading() * M_PI / 180) - 90;
   geometry_msgs::Quaternion quat_msg;
 
   // Set the frame ID and timestamp.  See the TF tutorials for information on
@@ -328,23 +330,23 @@ void FlightController::publish_pose() {
   marker.header.stamp = ros::Time::now();
   marker.ns = "pose";
   marker.id = 0;
-  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.type = visualization_msgs::Marker::CYLINDER;
   marker.action = visualization_msgs::Marker::ADD;
 
   // Set the pose of the marker.  This is a full 6DOF pose relative to the
   // frame/time specified in the header
-  marker.pose.position = current_pos_local;
+  marker.pose.position = point;
 
   tf::Quaternion quat_tf;
-  quat_tf.setRPY(0, 0, current_heading_g);
-  
+  quat_tf.setRPY(0, 0, heading );
+
   quaternionTFToMsg(quat_tf, quat_msg);
   marker.pose.orientation = quat_msg;
 
   // Set the scale of the marker -- 1x1x1 here means 1m on a side
-  marker.scale.x = 0.4;
-  marker.scale.y = 0.4;
-  marker.scale.z = 0.3;
+  marker.scale.x = 0.35;
+  marker.scale.y = 0.3;
+  marker.scale.z = 0.1;
 
   // Set the color -- be sure to set alpha to something non-zero!
   marker.color.r = 1.0f;
@@ -354,7 +356,18 @@ void FlightController::publish_pose() {
 
   marker.lifetime = ros::Duration(2);
 
-  waypoint_pub.publish(marker);
+  geometry_msgs::PoseStamped poseStamped;
+  poseStamped.header.frame_id = "/drone_local_frame";
+  poseStamped.header.stamp = ros::Time::now();
+  poseStamped.pose.position = point;
+  poseStamped.pose.orientation = quat_msg;
+
+  pose_path.poses.push_back(poseStamped);
+  pose_path.header.frame_id = "/drone_local_frame";
+  pose_path.header.stamp = ros::Time::now();
+
+  drone_pose_pub.publish(marker);
+  drone_path_pub.publish(pose_path);
 
 };
 
@@ -423,7 +436,9 @@ void FlightController::init_publisher_subscriber(ros::NodeHandle nh) {
 
   waypoint_pub        = nh.advertise<visualization_msgs::Marker>((ros_namespace + "/monash_motion/waypoints").c_str(), 1);
   flight_mode_pub     = nh.advertise<std_msgs::String>(ros_namespace + "/monash_motion/flight_mode", 1);
-  drone_pose_pub      = nh.advertise<nav_msgs::Path>((ros_namespace + "/monash_motion/pose_path").c_str(), 1);
+  
+  drone_pose_pub      = nh.advertise<visualization_msgs::Marker>((ros_namespace + "/monash_motion/pose").c_str(), 1);
+  drone_path_pub      = nh.advertise<nav_msgs::Path>((ros_namespace + "/monash_motion/path").c_str(), 1);
   target_sub          = nh.subscribe<geometry_msgs::PoseStamped>((ros_namespace + "/monash_perception/target").c_str(), 5, &FlightController::target_callback, this);
 
   command_server      = nh.advertiseService((ros_namespace + "/monash_motion/request_command").c_str(), &FlightController::command_request, this);

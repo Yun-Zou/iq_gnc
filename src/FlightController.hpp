@@ -57,9 +57,12 @@ protected:
   ros::Subscriber target_sub;
   ros::Publisher waypoint_pub;
   ros::Publisher flight_mode_pub;
+  ros::Publisher drone_path_pub;
   ros::Publisher drone_pose_pub;
   ros::ServiceServer command_server;
   ros::ServiceClient apriltag_client;
+
+  nav_msgs::Path pose_path;
 
   geometry_msgs::PoseStamped target_pose;
   bool target_valid = false;

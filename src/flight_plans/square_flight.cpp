@@ -29,11 +29,12 @@ int main(int argc, char **argv) {
 
   // specify some waypoints
   // flight_controller.absolute_move_WP(0,0,2,0);
-  flight_controller.absolute_move_WP(1.0,0.0,1.0,-90);
-  flight_controller.absolute_move_WP(1,1,1,0);
-  flight_controller.absolute_move_WP(0,1,1,90);
-  flight_controller.absolute_move_WP(0,0,1,180);
-  flight_controller.absolute_move_WP(0,0,1,0);
+  flight_controller.absolute_move_WP(2,0.0,2,-90);
+  flight_controller.absolute_move_WP(2,2,2,0);
+  flight_controller.absolute_move_WP(0,2,2,90);
+  flight_controller.absolute_move_WP(0,0,2,180);
+  flight_controller.absolute_move_WP(0,0,2,0);
+  flight_controller.circular_WP(0, 0, 2, 3);
 
   std::vector<gnc_api_waypoint> waypointList = flight_controller.get_waypoints();
 
