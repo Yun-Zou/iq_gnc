@@ -24,35 +24,35 @@ class FlightController {
 protected:
 
   // General Flight Parameters
-  double rapid_speed;
-  double normal_speed;
-  double altitude;
-  double circle_radius;
-  double operation_time;
+  double rapid_speed = 1.0;
+  double normal_speed = 0.5;
+  double altitude = 2.0;
+  double circle_radius = 2.0;
+  double operation_time = 120;
 
   // Waypoint Parameters
-  double max_waypoint_dist;
-  double waypoint_radius;
+  double max_waypoint_dist = 1.0;
+  double waypoint_radius = 0.3;
 
   // Search Mode Parameters
-  double grid_initial_x;
-  double grid_initial_y;
-  double grid_length_x;
-  double grid_length_y;
-  double grid_spacing;
-  double search_circle_radius;
-  double search_lost_time;
+  double grid_initial_x = 2;
+  double grid_initial_y = 2;
+  double grid_length_x = 3;
+  double grid_length_y = 3;
+  double grid_spacing = 1;
+  double search_circle_radius = 2.5;
+  double search_lost_time = 5;
 
   // Follow Mode Parameters
-  double follow_alt;
-  double follow_maintain_inner;
-  double follow_maintain_outer;
-  double follow_far;
-  double follow_time;
+  double follow_alt = 2;
+  double follow_maintain_inner = 0.5;
+  double follow_maintain_outer = 1.5;
+  double follow_far = 5;
+  double follow_time = 30;
 
   // Safe Conditions
-  double max_radius;
-  double max_altitude;
+  double max_radius = 10;
+  double max_altitude = 10;
 
   ros::Subscriber target_sub;
   ros::Publisher waypoint_pub;

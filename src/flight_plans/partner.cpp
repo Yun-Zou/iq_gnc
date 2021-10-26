@@ -52,6 +52,15 @@ int main(int argc, char **argv) {
 
       int counter = flight_controller.counter;
 
+      if (current_mode == Follow) {
+        if (flight_controller.check_target_validity()) {
+          flight_controller.follow_target();
+        } else {
+          flight_controller.set_flight_mode(Flight);
+          ROS_INFO( "Can't set flight mode Follow. Setting flight mode to Flight");
+        }
+      }
+      
       // Land if UAV has reached home position
       if (current_mode == Land) {
         flight_controller.set_flight_mode(Land);
@@ -64,7 +73,6 @@ int main(int argc, char **argv) {
                         waypointList[counter].z, waypointList[counter].psi);
 
         flight_controller.counter++;
-
       }
     }
 

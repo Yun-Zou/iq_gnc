@@ -82,7 +82,7 @@ geometry_msgs::Point enu_2_local(nav_msgs::Odometry current_pose_enu)
 void pose_cb(const nav_msgs::Odometry::ConstPtr& msg)
 {
   current_pose_g = *msg;
-  enu_2_local(current_pose_g);
+  current_pos_local = enu_2_local(current_pose_g);
   float q0 = current_pose_g.pose.pose.orientation.w;
   float q1 = current_pose_g.pose.pose.orientation.x;
   float q2 = current_pose_g.pose.pose.orientation.y;
@@ -356,9 +356,9 @@ int check_waypoint_reached(float pos_tolerance=0.3, float heading_tolerance=0.1)
     float deltaY = abs(waypoint_g.pose.position.y - current_pose_g.pose.pose.position.y);
     float deltaZ = 0; //abs(waypoint_g.pose.position.z - current_pose_g.pose.pose.position.z);
     float dMag = sqrt( pow(deltaX, 2) + pow(deltaY, 2) + pow(deltaZ, 2) );
-    ROS_INFO("dMag %f", dMag);
-    ROS_INFO("current pose x %F y %f z %f", (current_pose_g.pose.pose.position.x), (current_pose_g.pose.pose.position.y), (current_pose_g.pose.pose.position.z));
-    ROS_INFO("waypoint pose x %F y %f z %f", waypoint_g.pose.position.x, waypoint_g.pose.position.y,waypoint_g.pose.position.z);
+    // ROS_INFO("dMag %f", dMag);
+    // ROS_INFO("current pose x %F y %f z %f", (current_pose_g.pose.pose.position.x), (current_pose_g.pose.pose.position.y), (current_pose_g.pose.pose.position.z));
+    // ROS_INFO("waypoint pose x %F y %f z %f", waypoint_g.pose.position.x, waypoint_g.pose.position.y,waypoint_g.pose.position.z);
     //check orientation
     float cosErr = cos(current_heading_g*(M_PI/180)) - cos(local_desired_heading_g*(M_PI/180));
     float sinErr = sin(current_heading_g*(M_PI/180)) - sin(local_desired_heading_g*(M_PI/180));
@@ -367,7 +367,7 @@ int check_waypoint_reached(float pos_tolerance=0.3, float heading_tolerance=0.1)
 
     // ROS_INFO("current heading %f", current_heading_g);
     // ROS_INFO("local_desired_heading_g %f", local_desired_heading_g);
-    ROS_INFO("current heading error %f", headingErr);
+    // ROS_INFO("current heading error %f", headingErr);
 
     if( dMag < pos_tolerance && headingErr < heading_tolerance)
 	{

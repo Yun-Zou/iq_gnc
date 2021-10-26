@@ -44,6 +44,7 @@ bool FlightController::request_apriltag_detection(bool request) {
 
 void FlightController::target_callback( const geometry_msgs::PoseStamped::ConstPtr &msg) {
   target_pose = *msg;
+  // ROS_INFO("target_pose: %f %f %f", target_pose.pose.position.x,target_pose.pose.position.y,target_pose.pose.position.z);
   target_valid = true;
 };
 
@@ -103,45 +104,44 @@ bool FlightController::set_flight_mode(state mode) {
 
   } else if (mode == Follow) {
     request_apriltag_detection(true);
-    follow_target();
-    // if (check_target_validity()) {
-    //   follow_target();
+    if (check_target_validity()) {
+      clear_waypoints(counter);
+      follow_target();
 
-    // } else {
-    //   set_flight_mode(Flight);
-    //   ROS_INFO("Can't set flight mode Follow. Setting flight mode to Flight");
-    //   return false;
-    // }
+    } else {
+      set_flight_mode(Flight);
+      ROS_INFO("Can't set flight mode Follow. Setting flight mode to Flight");
+      return false;
+    }
 
   } else if (mode == RTL) {
     request_apriltag_detection(false);
     clear_waypoints(counter);
-    counter++;
     flight_algorithm.return_home(waypointList, altitude);
 
   } else if (mode == Land) {
     request_apriltag_detection(false);
     clear_waypoints(counter);
-    gnc_api_waypoint origin;
-    origin.x = 0.0;
-    origin.y = 0.0;
-    origin.z = 0.0;
-    origin.psi = 0.0;
-    waypointList.push_back(origin);
-    counter++;
+    gnc_api_waypoint point;
+    point.x = current_pos_local.x;
+    point.y = current_pos_local.y;
+    point.z = current_pos_local.z;
+    point.psi = 0.0;
+    waypointList.push_back(point);
     land();
+    counter++;
 
   } else if (mode == TakeOff) {
     start_timer();
     clear_waypoints(counter);
     gnc_api_waypoint origin;
-    origin.x = 0.0;
-    origin.y = 0.0;
-    origin.z = 0.0;
+    origin.x = current_pos_local.x;
+    origin.y = current_pos_local.y;
+    origin.z = altitude;
     origin.psi = 0.0;
     waypointList.push_back(origin);
-    counter++;
     takeoff(altitude);
+    counter++;
 
   } else {
     ROS_INFO("Request didn't match a mode");
@@ -211,7 +211,6 @@ void FlightController::circular_WP(float x, float y, float z, float radius, faci
 };
 
 void FlightController::follow_target() {
-  clear_waypoints(counter);
   follow_params params = {
       altitude,    follow_maintain_inner, follow_maintain_outer, follow_far,
       follow_time, max_waypoint_dist,     rapid_speed,           normal_speed};
@@ -231,10 +230,8 @@ void FlightController::search_circle(facing_direction direction) {
 
 bool FlightController::check_target_validity() {
   ros::Duration time_diff = ros::Time::now() - target_pose.header.stamp;
-
   if (time_diff <= ros::Duration(search_lost_time)) {
     target_valid = false;
-    ROS_INFO("target valid");
     return true;
   } else {
     return false;
@@ -305,17 +302,18 @@ void FlightController::publish_waypoints() {
 };
 
 void FlightController::broadcast_local_frame() {
+
   transform_local.setOrigin(tf::Vector3(local_offset_pose_g.x, local_offset_pose_g.y, local_offset_pose_g.z));
   transform_camera_odom.setOrigin(tf::Vector3(0,0,0));
   
   tf::Quaternion q;
-  q.setRPY(0, 0, local_offset_g);
+  q.setRPY(0, 0, (local_offset_g-90)/180 * M_PI);
   transform_local.setRotation(q);
 
   transform_camera_odom.setRotation(tf::Quaternion(0, 0, 0, 1));
 
-  tf_br_local.sendTransform(tf::StampedTransform(transform_local, ros::Time::now(), "map","drone_local_frame"));
-  tf_br_camera.sendTransform(tf::StampedTransform(transform_camera_odom, ros::Time::now(), "drone_local_frame","camera_odom_frame"));
+  tf_br_camera.sendTransform(tf::StampedTransform(transform_camera_odom, ros::Time::now(), "map","camera_odom_frame"));
+  tf_br_local.sendTransform(tf::StampedTransform(transform_local, ros::Time::now(), "camera_odom_frame","drone_local_frame"));
 }
 
 void FlightController::publish_pose() {

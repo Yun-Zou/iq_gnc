@@ -50,7 +50,9 @@ int main(int argc, char **argv) {
     current_mode = flight_controller.get_flight_mode();
 
     int counter = flight_controller.counter;
-    flight_controller.follow_target();
+    if (flight_controller.check_target_validity()) {
+      flight_controller.follow_target();
+    }
 
     // Land if UAV has reached home position
     if (current_mode == RTL || current_mode == Land) {
@@ -69,10 +71,10 @@ int main(int argc, char **argv) {
     } 
 
     // Go home if no remaining commands
-    else {
-      // return home after all waypoints are reached
-      flight_controller.set_flight_mode(RTL);
-    }
+    // else {
+    //   // return home after all waypoints are reached
+    //   flight_controller.set_flight_mode(RTL);
+    // }
   
     flight_controller.publish_topics();
   }

@@ -41,6 +41,9 @@ int main(int argc, char **argv) {
 
   bool follow_searching = false;
 
+  ros::Time follow_time;
+  ros::Duration follow_duration = ros::Duration(30);
+
   while (ros::ok()) {
     ros::spinOnce();
     rate.sleep();
@@ -48,8 +51,11 @@ int main(int argc, char **argv) {
     waypointList = flight_controller.get_waypoints();
     current_mode = flight_controller.get_flight_mode();
 
-    if (current_mode == Search && flight_controller.check_target_validity()) {
+    if ((current_mode == Flight && follow_searching) || (current_mode == Search &&
+        flight_controller.check_target_validity())) {
       flight_controller.set_flight_mode(Follow);
+      follow_time = ros::Time::now();
+
     }
 
     if (check_waypoint_reached(flight_controller.get_waypoint_radius()) == 1) {
@@ -57,16 +63,23 @@ int main(int argc, char **argv) {
       int counter = flight_controller.counter;
 
       if (current_mode == Follow) {
-        
         if (flight_controller.check_target_validity()) {
-          flight_controller.follow_target();
-          follow_searching = false;
-        } else if (!follow_searching)  {
+          if ((ros::Time::now() - follow_time) < follow_duration) {
+            flight_controller.follow_target();
+            follow_searching = false;
+          } else {
+            flight_controller.set_flight_mode(RTL);
+            continue;
+          }
+        } else {
+          flight_controller.set_flight_mode(Flight);
           flight_controller.search_last_known(Inside);
-          flight_controller.search_last_known(Outside);
           follow_searching = true;
+          ROS_INFO("Can't set flight mode Follow. Setting flight mode to Flight");
         }
       }
+
+      ROS_INFO("counter %f size %f",counter, waypointList.size());
 
       // Land if UAV has reached home position
       if (current_mode == RTL || current_mode == Land) {

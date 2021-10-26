@@ -176,22 +176,22 @@ public:
     float q3 = target_pose.pose.orientation.z;
     target_waypoint.psi = atan2((2 * (q0 * q3 + q1 * q2)), (1 - 2 * (pow(q2, 2) + pow(q3, 2))));
 
-    float psi = get_direct_heading(current_position, waypoint2point(target_waypoint));
+    float psi = deg2rad(get_direct_heading(current_position, waypoint2point(target_waypoint)));
 
     double dist = calc_waypoint_dist(target_waypoint);
-
     nextWaypoint.z = target_pose.pose.position.z + params.altitude;
     nextWaypoint.psi = psi;
 
     if (dist > params.far_away_dist) {
-      set_speed(params.rapid_speed);
+      // set_speed(params.rapid_speed);
       nextWaypoint.x = current_position.x + std::min(dist, params.waypoint_dist) *
                                                 cos(psi + (M_PI / 2));
       nextWaypoint.y = current_position.y + std::min(dist, params.waypoint_dist) *
                                                 sin(psi + (M_PI / 2));
 
-    } else if (dist > params.maintain_outer || dist < params.maintain_inner) {
-      set_speed(params.normal_speed);
+    } 
+    else if (dist > params.maintain_outer || dist < params.maintain_inner) {
+      // set_speed(params.normal_speed);
       float optimum_range = (params.maintain_inner + params.maintain_outer) / 2;
       nextWaypoint.x = current_position.x +
                        std::min(dist - optimum_range, params.waypoint_dist) *
@@ -201,11 +201,11 @@ public:
                            sin(psi + (M_PI / 2));
 
     } else {
-      set_speed(params.normal_speed);
+      // set_speed(params.normal_speed);
       nextWaypoint.x = current_position.x;
       nextWaypoint.y = current_position.y;
     }
-
+    
     waypointList.push_back(nextWaypoint);
 
     return true;
