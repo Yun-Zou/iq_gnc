@@ -217,17 +217,6 @@ void FlightController::follow_target() {
   flight_algorithm.set_follow(waypointList, target_pose, params);
 };
 
-void FlightController::search_circle(facing_direction direction) {
-  geometry_msgs::Point centre;
-  centre.x = target_pose.pose.position.x;
-  centre.y = target_pose.pose.position.y;
-  centre.z = target_pose.pose.position.z;
-
-  circle_params params = {circle_radius, altitude, 0.0, 2 * M_PI, direction};
-
-  flight_algorithm.set_circular_waypoint(waypointList, centre, params);
-};
-
 bool FlightController::check_target_validity() {
   ros::Duration time_diff = ros::Time::now() - target_pose.header.stamp;
   if (time_diff <= ros::Duration(search_lost_time)) {
@@ -381,11 +370,6 @@ void FlightController::publish_topics() {
   publish_pose();
   publish_flight_mode();
   broadcast_local_frame();
-}
-
-void FlightController::init(ros::NodeHandle nh) {
-  this->init_params(nh);
-  this->init_publisher_subscriber(nh);
 }
 
 void FlightController::init_params(ros::NodeHandle nh) {
