@@ -14,8 +14,8 @@ waypoint_radius: 0.5            # Radius until waypoint considered reached (m)
 # Search Mode Parameters
 grid_initial_x: 2               # Initial starting point of search grid (m)
 grid_initial_y: 2           
-grid_length_x: 5
-grid_length_y: 5
+grid_length_x: 5                # Length of grid in x direction (m)
+grid_length_y: 5                # Length of grid in y direction (m)
 grid_spacing: 2                 # Distance between each run in grid (m)
 search_circle_radius: 2.5       # Radius to search (m)
 search_lost_time: 5             # Time until target is considered lost (s)

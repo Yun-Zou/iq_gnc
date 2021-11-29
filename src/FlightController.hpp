@@ -199,14 +199,14 @@ public:
 
   /**
    * @brief Append a waypoint to list which is relative to current position. Note: It would be current position, not position of final waypoint
-   * 
+   *        Note: Not very reliable. Still need to be improved
    * @param relative_position Waypoint with relative coordinates (x,y,z and heading (degrees))
    */
   void relative_move(gnc_api_waypoint &relative_position);
 
   /**
-   * @brief Alternative relative move function. Accepts x,y,z and heading (psi) floats as params
-   * 
+   * @brief Alternative relative move function. Accepts x,y,z and heading (psi) floats as params 
+   *        Note: Not very reliable. Still need to be improved
    * @param x (m) in local frame
    * @param y (m) in local frame
    * @param z (m)
@@ -276,6 +276,7 @@ public:
 
   /**
    * @brief Check if drone has exceeded maximum radius, height or flight time. If so, go home
+   *        Note: Don't think it works. Need to improved
    * 
    */
   void check_safety_conditions();

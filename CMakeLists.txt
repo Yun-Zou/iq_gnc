@@ -212,6 +212,9 @@ target_link_libraries(square ${catkin_LIBRARIES})
 add_executable(gnc_example src/iq_gnc/gnc_tutorial.cpp)
 target_link_libraries(gnc_example ${catkin_LIBRARIES})
 
+add_executable(example src/flight_plans/example.cpp)
+target_link_libraries(example ${catkin_LIBRARIES})
+
 add_executable(square_flight src/flight_plans/square_flight.cpp)
 target_link_libraries(square_flight ${catkin_LIBRARIES})
 

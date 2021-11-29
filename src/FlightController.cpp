@@ -1,15 +1,32 @@
 #include "FlightController.hpp"
 #include "geometry_msgs/Quaternion.h"
 
-bool FlightController::command_request(monash_main::RequestAction::Request &req,
-                     monash_main::RequestAction::Response &res) {
+bool FlightController::command_request(
+    monash_main::RequestAction::Request &req,
+    monash_main::RequestAction::Response &res) {
+
   if (accepting_commands) {
-    if (req.command == (int) Flight) {
+
+    // If flight command, move to position requested
+    // param1 = x
+    // param2 = y
+    // param3 = z
+    // param4 = psi
+    if (req.command == (int)Flight) {
       absolute_move_WP(req.param1, req.param2, req.param3, req.param4);
-    } else if (req.command == (int) Circle) {
-      circular_WP(req.param1, req.param2, altitude, req.param3, (facing_direction) req.param4);
+    } 
+
+    // If circle command, do circle command
+    // param1 = x centre
+    // param2 = y centre
+    // param3 = radius
+    // param4 = facing_direction as int
+    else if (req.command == (int)Circle) {
+      circular_WP(req.param1, req.param2, altitude, req.param3, (facing_direction)req.param4);
     }
-    state commandRequested = (state) req.command;
+
+    // Set flight mode
+    state commandRequested = (state)req.command;
     set_flight_mode(commandRequested);
     res.success = true;
 
@@ -24,7 +41,8 @@ bool FlightController::command_request(monash_main::RequestAction::Request &req,
 bool FlightController::request_apriltag_detection(bool request) {
   mavros_msgs::CommandBool request_srv;
   request_srv.request.value = request;
-  
+
+  // If not already requested/not requested
   if (request != requesting_apriltags) {
     requesting_apriltags = request;
     if (set_mode_client.call(request_srv)) {
@@ -39,7 +57,6 @@ bool FlightController::request_apriltag_detection(bool request) {
       return false;
     }
   }
-
 }
 
 void FlightController::target_callback( const geometry_msgs::PoseStamped::ConstPtr &msg) {
@@ -50,8 +67,7 @@ void FlightController::target_callback( const geometry_msgs::PoseStamped::ConstP
 
 void FlightController::search_last_known(facing_direction direction) {
 
-  circle_params params = {search_circle_radius, altitude, 0, 2 * M_PI,
-                          direction};
+  circle_params params = {search_circle_radius, altitude, 0, 2 * M_PI, direction};
 
   geometry_msgs::Point search_origin;
   search_origin.x = target_pose.pose.position.x;
@@ -153,18 +169,23 @@ bool FlightController::set_flight_mode(state mode) {
 
 void FlightController::clear_waypoints(int counter = 0) {
 
+  // Clear waypoint from counter index to end
   waypointList.erase(std::next(waypointList.begin(), counter),
                      std::next(waypointList.begin(), waypointList.size()));
+
 };
 
 void FlightController::absolute_move(gnc_api_waypoint &absolute_position) {
 
+  // Append waypoint of absolute position to list
   gnc_api_waypoint nextWayPoint = absolute_position;
   waypointList.push_back(nextWayPoint);
+
 };
 
 void FlightController::relative_move(gnc_api_waypoint &relative_position) {
 
+  // Append waypoint for relative position compared to current location
   geometry_msgs::Point current_location = get_current_location();
   float current_heading = get_current_heading();
 
@@ -205,24 +226,33 @@ void FlightController::circular_WP(float x, float y, float z, float radius, faci
   centre.y = y;
   centre.z = z;
 
+  // Set circle movement parameters according to ones defined in config file
+  // Do a full rotation starting at 0 degrees in circle arc
   circle_params params = {circle_radius, altitude, 0.0, 2 * M_PI, direction};
 
   flight_algorithm.set_circular_waypoint(waypointList, centre, params);
+
 };
 
 void FlightController::follow_target() {
+  // Follow target according to parameters set in config
   follow_params params = {
       altitude,    follow_maintain_inner, follow_maintain_outer, follow_far,
       follow_time, max_waypoint_dist,     rapid_speed,           normal_speed};
   flight_algorithm.set_follow(waypointList, target_pose, params);
+
 };
 
 bool FlightController::check_target_validity() {
+  
+  // Find time difference between now and last stamp
   ros::Duration time_diff = ros::Time::now() - target_pose.header.stamp;
+
+  // If time difference is less than search time set
   if (time_diff <= ros::Duration(search_lost_time)) {
-    target_valid = false;
     return true;
   } else {
+    target_valid = false;
     return false;
   }
 }
@@ -231,15 +261,22 @@ void FlightController::check_safety_conditions() {
 
   geometry_msgs::Point current_position = get_current_location();
 
-  bool time_check =
-      (ros::Time::now() - begin_time) > ros::Duration(operation_time);
+  // Check flight time hasn't exceeded operation time set
+  bool time_check = (ros::Time::now() - begin_time) > ros::Duration(operation_time);
+
+  // Check position hasn't exceeded maximum radius set
   bool radius_check =
       pow(pow(current_position.x, 2) + pow(current_position.y, 2), 1 / 2) >
       max_radius;
+  
+  // Check if altitude hasn't exceeded maximum altitude set
   bool altitude_check = current_position.z > max_altitude;
+
+  // If any conditions met, go home
   if (time_check || radius_check || altitude_check) {
     set_flight_mode(RTL);
   }
+
 };
 
 void FlightController::publish_waypoints() {
@@ -266,6 +303,7 @@ void FlightController::publish_waypoints() {
   marker.pose.orientation.z = 0.0;
   marker.pose.orientation.w = 1.0;
 
+  // Append all waypoints in list
   for (int i = 0; i < counter; i++) {
     point.x = waypointList[i].x;
     point.y = waypointList[i].y;
@@ -285,6 +323,7 @@ void FlightController::publish_waypoints() {
   marker.color.b = 0.0f;
   marker.color.a = 0.5f;
 
+  // Only show for 2 seconds
   marker.lifetime = ros::Duration(2);
 
   waypoint_pub.publish(marker);
@@ -292,10 +331,12 @@ void FlightController::publish_waypoints() {
 
 void FlightController::broadcast_local_frame() {
 
+  // Set drone_local_frame relating to camera_odom_frame as the offset calculated in gnc_functions when calling initialize_local_frame
   transform_local.setOrigin(tf::Vector3(local_offset_pose_g.x, local_offset_pose_g.y, local_offset_pose_g.z));
   transform_camera_odom.setOrigin(tf::Vector3(0,0,0));
   
   tf::Quaternion q;
+  // Set rotation of drone_local_frame as offset when calling initialize_local_frame
   q.setRPY(0, 0, (local_offset_g-90)/180 * M_PI);
   transform_local.setRotation(q);
 
@@ -343,12 +384,14 @@ void FlightController::publish_pose() {
 
   marker.lifetime = ros::Duration(2);
 
+  // Publish drone position as cylinder
   geometry_msgs::PoseStamped poseStamped;
   poseStamped.header.frame_id = "/drone_local_frame";
   poseStamped.header.stamp = ros::Time::now();
   poseStamped.pose.position = point;
   poseStamped.pose.orientation = quat_msg;
 
+  // Publish path to represent where drone has been
   pose_path.poses.push_back(poseStamped);
   pose_path.header.frame_id = "/drone_local_frame";
   pose_path.header.stamp = ros::Time::now();
@@ -361,6 +404,8 @@ void FlightController::publish_pose() {
 void FlightController::publish_flight_mode() {
   state mode = get_flight_mode();
   std_msgs::String msg;
+
+  // Get state as string
   msg.data = state_string[mode];
   flight_mode_pub.publish(msg);
 };
