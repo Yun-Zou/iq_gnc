@@ -1,6 +1,9 @@
 #include "../FlightController.cpp"
 // include API
 
+// testing_function.cpp
+// Testing file where you can quickly analyse the output of waypoints created without real-life drone.
+
 void init_fake_initial_pos() {
   current_pose_g.pose.pose.position.x = 0;
   current_pose_g.pose.pose.position.y = 0;

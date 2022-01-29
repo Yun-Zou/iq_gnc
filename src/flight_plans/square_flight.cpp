@@ -1,6 +1,9 @@
 #include "../FlightController.cpp"
 // include API
 
+// square_flight.cpp
+// Fly in a square pattern and then land
+
 int main(int argc, char **argv) {
   // initialize ros
   ros::init(argc, argv, "square_flight");

@@ -1,7 +1,8 @@
 #include "../FlightController.cpp"
 // include API
 
-
+// travel_and_return.cpp
+// Travel to a destination with pre-defined waypoints, return and then land
 
 int main(int argc, char **argv) {
   // initialize ros

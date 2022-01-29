@@ -1,6 +1,9 @@
 #include "../FlightController.cpp"
 // include API
 
+// search_follow.cpp
+// Perform a search grid and then follow the target if found
+
 int main(int argc, char **argv) {
   // initialize ros
   ros::init(argc, argv, "search_follow");

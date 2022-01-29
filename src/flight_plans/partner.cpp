@@ -1,6 +1,9 @@
 #include "../FlightController.cpp"
 // include API
 
+// partner.cpp
+// Follow the target if it is found
+
 int main(int argc, char **argv) {
   // initialize ros
   ros::init(argc, argv, "partner");
@@ -28,7 +31,7 @@ int main(int argc, char **argv) {
   flight_controller.set_accepting_commands(true);
 
   // specify some waypoints
-  // flight_controller.absolute_move_WP(0,0,2,0);
+  flight_controller.absolute_move_WP(0,0,2,0);
 
   std::vector<gnc_api_waypoint> waypointList = flight_controller.get_waypoints();
 

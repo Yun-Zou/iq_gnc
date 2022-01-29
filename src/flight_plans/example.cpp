@@ -1,6 +1,9 @@
 #include "../FlightController.cpp"
 // include API
 
+// example.cpp
+// Example of a simple flight plan to be used as reference
+
 int main(int argc, char **argv) {
   // initialize ros
   ros::init(argc, argv, "example");
